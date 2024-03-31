@@ -9,7 +9,7 @@ use cli::{Cli, Commands};
 use colored::*;
 use config::Config;
 use memfolder::MemFolder;
-use sources::compute_hash;
+use sources::{compute_hash, FileSource};
 use anyhow::format_err;
 
 fn main() {
@@ -59,6 +59,12 @@ fn check(config_path: &str) -> Result<()> {
         let mut working_hash = file.hash.clone();
         let mut misses = 0;
         for source in &file.sources {
+            if let FileSource::Local { path }=source{
+                if path.is_relative(){
+                    let warn="Relative paths should be avoided!";
+                    println!("{}",warn.red());
+                }
+            }
             source_counter += 1;
             match &source.fetch() {
                 Ok(contents) => {
