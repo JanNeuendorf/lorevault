@@ -1,6 +1,6 @@
 [package]
 name = "lorevault"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 
@@ -9,6 +9,7 @@ anyhow = "1.0.81"
 clap = { version = "4.5.4", features = ["derive"] }
 colored = "2.1.0"
 git2 = "0.18.3"
+regex = "1.10.4"
 reqwest = { version = "0.12.2", features = ["blocking", "json"] }
 serde = { version = "1.0.197", features = ["derive"] }
 sha3 = "0.10.8"

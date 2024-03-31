@@ -42,7 +42,7 @@ impl FileSource {
         match self {
             FileSource::Local { path } => {
                 if path.is_relative() {
-                    return Err(format_err!("only absolute paths are allowed! ({})",path.to_string_lossy()));
+                    //nothing for now
                 }
                 fs::read(path).context("could not read local file")
             }

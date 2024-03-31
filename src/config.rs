@@ -1,8 +1,7 @@
+use crate::cli::source_from_string;
 use crate::sources::FileSource;
 use anyhow:: Result;
 use serde::{Deserialize, Serialize};
-use std::fs;
-use std::io::Read;
 use std::path::PathBuf;
 use anyhow::format_err;
 
@@ -41,16 +40,15 @@ impl Config {
         self.content.clone()
     }
 
-    pub fn from_file(file_path: &PathBuf) -> Result<Config> {
-        let mut file = fs::File::open(file_path)?;
-        let mut toml_string = String::new();
-        file.read_to_string(&mut toml_string)?;
-        let deserialized_data = toml::from_str(&toml_string)?;
-        Ok(deserialized_data)
+
+    fn from_filesource(source:&FileSource)->Result<Self>{
+        let toml_string=String::from_utf8(source.fetch()?)?;
+        Ok(toml::from_str(&toml_string)?)
     }
 
-    pub fn from_general_path(gp:&str)->Result<Self>{
-        Config::from_file(&PathBuf::from(gp))
+    pub fn from_general_path(general_path:&str)->Result<Self>{
+        let source=source_from_string(general_path)?;
+        Self::from_filesource(&source)
     }
 }
 
