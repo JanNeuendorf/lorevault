@@ -48,6 +48,10 @@ impl Config {
         let deserialized_data = toml::from_str(&toml_string)?;
         Ok(deserialized_data)
     }
+
+    pub fn from_general_path(gp:&str)->Result<Self>{
+        Config::from_file(&PathBuf::from(gp))
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

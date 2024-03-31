@@ -28,8 +28,8 @@ fn main() {
     }
 }
 
-fn sync_folder(output: &PathBuf, config_path: &PathBuf, tags: &Vec<String>) -> Result<()> {
-    let conf = Config::from_file(config_path)?;
+fn sync_folder(output: &PathBuf, config_path: &str, tags: &Vec<String>) -> Result<()> {
+    let conf = Config::from_general_path(config_path)?;
     let reference = MemFolder::load_from_folder(output).unwrap_or(MemFolder::empty());
     if reference.0.is_empty() {
         println!("Clean Sync");
@@ -39,8 +39,8 @@ fn sync_folder(output: &PathBuf, config_path: &PathBuf, tags: &Vec<String>) -> R
     Ok(())
 }
 
-fn check(config_path: &PathBuf) -> Result<()> {
-    let conf = Config::from_file(config_path)?;
+fn check(config_path: &str) -> Result<()> {
+    let conf = Config::from_general_path(config_path)?;
     let number_of_sources = conf.get_all().iter().map(|f| &f.sources).flatten().count();
     let mut source_counter = 0;
     for file in conf.get_all() {
@@ -120,7 +120,7 @@ fn write_example_config() -> Result<()> {
     Ok(())
 }
 
-fn print_hash(path: &PathBuf) -> Result<()> {
+fn print_hash(path: &str) -> Result<()> {//todo does need support for general paths
     let content = fs::read(path)?;
     let hash = compute_hash(&content);
     println!("hash= \"{}\"", hash);

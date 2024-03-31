@@ -14,7 +14,7 @@ pub enum Commands {
     #[command(about = "Sync to a specified directory")]
     Sync {
         #[arg(help = "Config file")]
-        file: PathBuf,
+        file: String,
         #[arg(help = "Destination folder")]
         output: PathBuf,
         #[arg(short, long)]
@@ -25,10 +25,10 @@ pub enum Commands {
     )]
     Check {
         #[arg(help = "Config file")]
-        file: PathBuf,
+        file: String,
     },
     #[command(about = "Writes out an example file")]
     Example {},
     #[command(about = "Prints the sha3-256 hash of a file.")]
-    Hash { file: PathBuf },
+    Hash { file: String },
 }
