@@ -4,13 +4,13 @@ mod cli;
 mod config;
 mod memfolder;
 mod sources;
+use anyhow::format_err;
 use clap::Parser;
 use cli::{Cli, Commands};
 use colored::*;
 use config::Config;
 use memfolder::MemFolder;
 use sources::{compute_hash, FileSource};
-use anyhow::format_err;
 
 fn main() {
     let cli = Cli::parse();
@@ -59,10 +59,10 @@ fn check(config_path: &str) -> Result<()> {
         let mut working_hash = file.hash.clone();
         let mut misses = 0;
         for source in &file.sources {
-            if let FileSource::Local { path }=source{
-                if path.is_relative(){
-                    let warn="Relative paths are not allowed!";
-                    println!("{}",warn.red());
+            if let FileSource::Local { path } = source {
+                if path.is_relative() {
+                    let warn = "Relative paths are not allowed!";
+                    println!("{}", warn.red());
                 }
             }
             source_counter += 1;
@@ -75,7 +75,10 @@ fn check(config_path: &str) -> Result<()> {
                                 let warning = format!("Hash not correct for {:?}", source);
 
                                 println!("{}", warning.red());
-                                return Err(format_err!("Hash did not match for {}",display_filename(file.get_path(), &file.get_tags())));
+                                return Err(format_err!(
+                                    "Hash did not match for {}",
+                                    display_filename(file.get_path(), &file.get_tags())
+                                ));
                             }
                         }
                         None => working_hash = Some(current_hash),
@@ -92,7 +95,7 @@ fn check(config_path: &str) -> Result<()> {
                         source_counter, number_of_sources, source
                     );
                     println!("{}", warning.yellow());
-                    println!("{}",format!("{}",e).yellow());
+                    println!("{}", format!("{}", e).yellow());
                     misses = misses + 1;
                     if misses == file.sources.len() {
                         let warning = format!(
@@ -100,7 +103,10 @@ fn check(config_path: &str) -> Result<()> {
                             display_filename(file.get_path(), &file.get_tags())
                         );
                         println!("{}", warning.red());
-                        return Err(format_err!("No valid sources for {}",display_filename(file.get_path(), &file.get_tags())));
+                        return Err(format_err!(
+                            "No valid sources for {}",
+                            display_filename(file.get_path(), &file.get_tags())
+                        ));
                     }
                 }
             }
@@ -126,7 +132,8 @@ fn write_example_config() -> Result<()> {
     Ok(())
 }
 
-fn print_hash(path: &str) -> Result<()> {//todo does need support for general paths
+fn print_hash(path: &str) -> Result<()> {
+    //todo does need support for general paths
     let content = fs::read(path)?;
     let hash = compute_hash(&content);
     println!("hash= \"{}\"", hash);

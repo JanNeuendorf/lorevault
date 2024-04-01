@@ -1,7 +1,7 @@
+use anyhow::{format_err, Ok, Result};
 use clap::{Parser, Subcommand};
-use std::path::PathBuf;
 use regex::Regex;
-use anyhow::{format_err, Ok,Result};
+use std::path::PathBuf;
 
 use crate::sources::FileSource;
 
@@ -17,7 +17,7 @@ pub struct Cli {
 pub enum Commands {
     #[command(about = "Sync to a specified directory")]
     Sync {
-        #[arg(help = "Config file")]
+        #[arg(help = "Config file", long_help = "Supports repo#commit:path")]
         file: String,
         #[arg(help = "Destination folder")]
         output: PathBuf,
@@ -25,7 +25,8 @@ pub enum Commands {
         tags: Vec<String>,
     },
     #[command(
-        about = "Print a report. Fails if a file has no valid sources or a hash does not match."
+        about = "Print a report.",
+        long_about = "Print a report on the config. Fails if a file has no valid sources or a hash does not match"
     )]
     Check {
         #[arg(help = "Config file")]
@@ -37,55 +38,56 @@ pub enum Commands {
     Hash { file: String },
 }
 
+fn is_repo(general_path: &str) -> bool {
+    let re = Regex::new(r".*#[0-9a-fA-F]{7,40}:.*").expect("regular expression pattern invalid");
 
-fn is_repo(general_path: &str)->bool{
-    
-        let re=Regex::new(r".*#[0-9a-fA-F]{7,40}:.*").expect("regular expression pattern invalid");
-   
-        re.is_match(general_path)
-    }
-
-    fn extract_components(s: &str) -> Option<(String, String, String)> {
-    
-        let re = Regex::new(r"(.*?)#([0-9a-fA-F]{7,40}):(.*)").expect("regular expression pattern invalid");
-    
-        if let Some(captures) = re.captures(s) {
-
-            let before_hash = captures.get(1)?.as_str().trim().to_string();
-            let hash = captures.get(2)?.as_str().trim().to_string();
-            let after_hash = captures.get(3)?.as_str().trim().to_string();
-    
-            Some((before_hash, hash, after_hash))
-        } else {
-            None
-        }
-    }
-
-pub fn source_from_string(general_path:&str)->Result<FileSource>{
-    if is_repo(general_path){
-        match extract_components(general_path){
-            Some((repo,commit,path))=>{
-                Ok(FileSource::Git { repo: repo.into(), commit: commit.into(), path: path.into() })
-            },
-            None=>{Err(format_err!("could not parse repo string"))}
-        }
-    }else{
-        Ok(FileSource::Local { path: general_path.into() })
-    }
-
+    re.is_match(general_path)
 }
 
+fn extract_components(s: &str) -> Option<(String, String, String)> {
+    let re =
+        Regex::new(r"(.*?)#([0-9a-fA-F]{7,40}):(.*)").expect("regular expression pattern invalid");
+
+    if let Some(captures) = re.captures(s) {
+        let before_hash = captures.get(1)?.as_str().trim().to_string();
+        let hash = captures.get(2)?.as_str().trim().to_string();
+        let after_hash = captures.get(3)?.as_str().trim().to_string();
+
+        Some((before_hash, hash, after_hash))
+    } else {
+        None
+    }
+}
+
+pub fn source_from_string(general_path: &str) -> Result<FileSource> {
+    if is_repo(general_path) {
+        match extract_components(general_path) {
+            Some((repo, commit, path)) => Ok(FileSource::Git {
+                repo: repo.into(),
+                commit: commit.into(),
+                path: path.into(),
+            }),
+            None => Err(format_err!("could not parse repo string")),
+        }
+    } else {
+        Ok(FileSource::Local {
+            path: general_path.into(),
+        })
+    }
+}
 
 #[cfg(test)]
-mod test{
+mod test {
     use super::*;
 
     #[test]
-    fn test_repo_string(){
+    fn test_repo_string() {
         assert!(is_repo("https://github.com/fjosw/pyerrors.git#fb17a46eb92e8d779e57a10589e9012e9aa5f948:pyerrors/correlators.py"));
         assert_eq!(extract_components("https://github.com/fjosw/pyerrors.git#fb17a46eb92e8d779e57a10589e9012e9aa5f948:pyerrors/correlators.py"),
         Some(("https://github.com/fjosw/pyerrors.git".into(),"fb17a46eb92e8d779e57a10589e9012e9aa5f948".into(),"pyerrors/correlators.py".into())));
-        assert!(!is_repo("https://github.com/fjosw/pyerrors.git:pyerrors/correlators.py"));
+        assert!(!is_repo(
+            "https://github.com/fjosw/pyerrors.git:pyerrors/correlators.py"
+        ));
         assert!(!is_repo("/home/somefile.toml"));
     }
 }

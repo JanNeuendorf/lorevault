@@ -1,9 +1,9 @@
 use crate::cli::source_from_string;
 use crate::sources::FileSource;
-use anyhow:: Result;
+use anyhow::format_err;
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::{fs, path::PathBuf};
-use anyhow::format_err;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -29,7 +29,10 @@ impl Config {
                 continue;
             }
             if paths.contains(item.get_path()) {
-                return Err(format_err!("There are two files for path {}",&item.get_path().to_string_lossy()));
+                return Err(format_err!(
+                    "There are two files for path {}",
+                    &item.get_path().to_string_lossy()
+                ));
             }
             new_content.push(item.clone());
             paths.push(item.get_path().clone())
@@ -40,20 +43,17 @@ impl Config {
         self.content.clone()
     }
 
-
-    fn from_filesource(source:&FileSource)->Result<Self>{
-        let data=match source{
-            FileSource::Local { path }=>{
-                fs::read(path)?
-            },
-            _=>{source.fetch()?}
+    fn from_filesource(source: &FileSource) -> Result<Self> {
+        let data = match source {
+            FileSource::Local { path } => fs::read(path)?,
+            _ => source.fetch()?,
         };
-        let toml_string=String::from_utf8(data)?;
+        let toml_string = String::from_utf8(data)?;
         Ok(toml::from_str(&toml_string)?)
     }
 
-    pub fn from_general_path(general_path:&str)->Result<Self>{
-        let source=source_from_string(general_path)?;
+    pub fn from_general_path(general_path: &str) -> Result<Self> {
+        let source = source_from_string(general_path)?;
         Self::from_filesource(&source)
     }
 }

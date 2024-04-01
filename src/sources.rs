@@ -1,15 +1,15 @@
-use anyhow::{Context, format_err, Result};
+use anyhow::{format_err, Context, Result};
 
-use git2::{Oid, Repository};
+use colored::*;
+use git2::{BranchType, Oid, Repository};
 use reqwest;
 use sha3::{Digest, Sha3_256};
 use std::path::PathBuf;
+use std::process::Command;
 use std::{fs, io::Read};
 use tar::Archive;
 use tempfile::TempDir;
 use xz2::read::XzDecoder;
-use colored::*;
-use std::process::Command;
 
 use std::io::Cursor;
 use zip::read::ZipArchive;
@@ -35,7 +35,11 @@ pub enum FileSource {
     #[serde(rename = "archive")]
     Archive { archive: PathBuf, path: PathBuf },
     #[serde(rename = "borg")]
-    Borg { archive: PathBuf, backup_id:String,path: PathBuf },
+    Borg {
+        archive: PathBuf,
+        backup_id: String,
+        path: PathBuf,
+    },
 }
 impl FileSource {
     pub fn fetch(&self) -> Result<Vec<u8>> {
@@ -53,7 +57,11 @@ impl FileSource {
             }
             FileSource::Git { repo, commit, path } => get_git_file(commit, path, repo),
             FileSource::Text { content } => Ok(content.clone().into_bytes()),
-            FileSource::Borg { archive, backup_id, path }=>{read_from_borg(archive, backup_id, path)}
+            FileSource::Borg {
+                archive,
+                backup_id,
+                path,
+            } => read_from_borg(archive, backup_id, path),
             FileSource::Archive { archive, path } => {
                 let filename = archive.file_name().context("no ending")?.to_string_lossy();
                 if filename.ends_with(".zip") {
@@ -85,9 +93,8 @@ pub fn fetch_first_valid(sources: &Vec<FileSource>, hash: &Option<String>) -> Re
                 }
             }
         } else {
-
-            let warn=format!("Invalid source {:?}", &s);
-            println!("{}",warn.red());
+            let warn = format!("Invalid source {:?}", &s);
+            println!("{}", warn.red());
         }
     }
     return Err(format_err!("No valid source in list"));
@@ -107,35 +114,30 @@ pub fn compute_hash(content: &Vec<u8>) -> String {
 }
 
 fn get_git_file(commit_hash: &str, file_path: &PathBuf, repo_path: &str) -> Result<Vec<u8>> {
-    // Open the remote repository
+    let repo = get_git_repo(repo_path)?;
 
-    let repo: Repository;
-    if is_url(repo_path) {
-        // If repo_path is a URL, clone the repository into a temporary directory
-
-        repo = clone_repository(repo_path)?;
-    } else {
-        // If repo_path is a local path, open the repository
-        repo = Repository::open(repo_path)?;
-    }
-
-    // Get the commit corresponding to the given commit hash
     let commit = repo.find_commit(Oid::from_str(commit_hash)?)?;
-
-    // Get the tree of the commit
     let tree = commit.tree()?;
 
-    // Get the blob corresponding to the file path
     let blob = tree
         .get_path(&std::path::Path::new(file_path))?
         .to_object(&repo)?;
 
-    // Ensure the object is a blob
     if let Some(blob) = blob.as_blob() {
         Ok(blob.content().to_vec())
     } else {
         Err(format_err!("Git object is not a blob"))
     }
+}
+
+fn get_git_repo(repo_path: &str) -> Result<Repository> {
+    let repo: Repository;
+    if is_url(repo_path) {
+        repo = clone_repository(repo_path)?;
+    } else {
+        repo = Repository::open(repo_path)?;
+    }
+    Ok(repo)
 }
 
 fn is_url(path: &str) -> bool {
@@ -153,28 +155,29 @@ fn clone_repository(repo_url: &str) -> Result<Repository> {
 
 fn extract_file_from_zip(path_to_zip: &PathBuf, sub_path: &PathBuf) -> Result<Vec<u8>> {
     // Create a zip archive from the provided zip data
-    
+
     let zip_data = fs::read(path_to_zip)?;
-    
+
     let reader = Cursor::new(zip_data);
     let mut zip = ZipArchive::new(reader)?;
 
     for i in 0..zip.len() {
-        let mut entry =zip.by_index(i)?;
-    
+        let mut entry = zip.by_index(i)?;
 
-        let entry_subpath=strip_first_level(entry.name());
+        let entry_subpath = strip_first_level(entry.name());
 
-
-                if entry_subpath==sub_path.to_str().context("invalid path")? {
-                    let mut content = Vec::new();
-                    entry.read_to_end(&mut content)?;
-                    return Ok(content);
-                }
-
+        if entry_subpath == sub_path.to_str().context("invalid path")? {
+            let mut content = Vec::new();
+            entry.read_to_end(&mut content)?;
+            return Ok(content);
+        }
     }
 
-    Err(format_err!("file {} not found in {}",sub_path.to_string_lossy(),path_to_zip.to_string_lossy()))
+    Err(format_err!(
+        "file {} not found in {}",
+        sub_path.to_string_lossy(),
+        path_to_zip.to_string_lossy()
+    ))
 }
 
 fn extract_file_from_tar(archive_path: &PathBuf, file_path: &PathBuf) -> Result<Vec<u8>> {
@@ -189,7 +192,6 @@ fn extract_file_from_xz_tar(archive_path: &PathBuf, file_path: &PathBuf) -> Resu
     // Create a buffer to hold the decompressed data
     let mut buf = Vec::new();
     xz.read_to_end(&mut buf)?;
-    
 
     extract_file_from_tar_data(&buf, file_path)
 }
@@ -200,13 +202,12 @@ fn extract_file_from_tar_data(buf: &Vec<u8>, file_path: &PathBuf) -> Result<Vec<
 
     // Create a tar archive from the decompressed data
     let mut archive = Archive::new(&mut cursor);
-    
-    
+
     // Iterate through the entries in the tar archive
     for entry in archive.entries()? {
         let mut entry = entry?;
         let entry_path = entry.path()?;
-       
+
         // Convert the entry path to a string
         let entry_path_str = entry_path.to_string_lossy();
 
@@ -222,38 +223,42 @@ fn extract_file_from_tar_data(buf: &Vec<u8>, file_path: &PathBuf) -> Result<Vec<
     Err(format_err!("Path not found in tar data"))
 }
 
+fn strip_first_level(s: &str) -> String {
+    let mut components = s.split('/').collect::<Vec<_>>();
 
-fn strip_first_level(s:&str) -> String {
+    if components.len() > 1 {
+        components.remove(0);
 
-        let mut components = s.split('/').collect::<Vec<_>>();
+        let stripped_path = components.join("/");
 
-        if components.len() > 1 {
-
-            components.remove(0);
-
-
-            let stripped_path = components.join("/");
-
-
-            return stripped_path;
-        }else{s.to_string()}
+        return stripped_path;
+    } else {
+        s.to_string()
     }
-
-
-fn read_from_borg(archive_path:&PathBuf,backup_name:&str,sub_path: &PathBuf)->Result<Vec<u8>>{
-    let borg_exists=Command::new("borg").arg("-V").output()?.status.success();
-    if !borg_exists{
-        return Err(format_err!("borg might not be installed"))
-    }
-    let backup=&format!("{}::{}",archive_path.to_str().context("path not printable")?,backup_name);
-    let output = Command::new("borg")
-                     .arg("extract")
-                     .arg(backup).arg(sub_path.to_str().context("subpath not printable")?)
-                     .arg("--stdout")
-                     .output()?;
-    if !output.status.success(){
-        return Err(format_err!("Call to borg failed"))
-    }
-    return Ok(output.stdout)
 }
 
+fn read_from_borg(
+    archive_path: &PathBuf,
+    backup_name: &str,
+    sub_path: &PathBuf,
+) -> Result<Vec<u8>> {
+    let borg_exists = Command::new("borg").arg("-V").output()?.status.success();
+    if !borg_exists {
+        return Err(format_err!("borg might not be installed"));
+    }
+    let backup = &format!(
+        "{}::{}",
+        archive_path.to_str().context("path not printable")?,
+        backup_name
+    );
+    let output = Command::new("borg")
+        .arg("extract")
+        .arg(backup)
+        .arg(sub_path.to_str().context("subpath not printable")?)
+        .arg("--stdout")
+        .output()?;
+    if !output.status.success() {
+        return Err(format_err!("Call to borg failed"));
+    }
+    return Ok(output.stdout);
+}
