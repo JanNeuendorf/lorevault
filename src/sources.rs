@@ -1,8 +1,7 @@
 use anyhow::{format_err, Context, Result};
 
 use colored::*;
-use git2::{BranchType, Oid, Repository};
-use reqwest;
+use git2::{Oid, Repository};
 use sha3::{Digest, Sha3_256};
 use std::path::PathBuf;
 use std::process::Command;
@@ -20,7 +19,6 @@ use serde::{Deserialize, Serialize};
 #[serde(tag = "type")]
 pub enum FileSource {
     #[serde(rename = "file")]
-    //forbid relative paths!!!!!!!!!
     Local { path: PathBuf },
     #[serde(rename = "http")]
     Download { url: String },
@@ -145,7 +143,6 @@ fn is_url(path: &str) -> bool {
 }
 
 fn clone_repository(repo_url: &str) -> Result<Repository> {
-    // Create a temporary directory to clone the repository into
     let temp_dir = TempDir::new()?;
 
     let repo = git2::build::RepoBuilder::new().clone(repo_url, temp_dir.path())?;
@@ -154,8 +151,6 @@ fn clone_repository(repo_url: &str) -> Result<Repository> {
 }
 
 fn extract_file_from_zip(path_to_zip: &PathBuf, sub_path: &PathBuf) -> Result<Vec<u8>> {
-    // Create a zip archive from the provided zip data
-
     let zip_data = fs::read(path_to_zip)?;
 
     let reader = Cursor::new(zip_data);
@@ -185,11 +180,9 @@ fn extract_file_from_tar(archive_path: &PathBuf, file_path: &PathBuf) -> Result<
 }
 
 fn extract_file_from_xz_tar(archive_path: &PathBuf, file_path: &PathBuf) -> Result<Vec<u8>> {
-    // Open the XZ-compressed tar file
     let file = fs::File::open(archive_path)?;
     let mut xz = XzDecoder::new(file);
 
-    // Create a buffer to hold the decompressed data
     let mut buf = Vec::new();
     xz.read_to_end(&mut buf)?;
 
@@ -197,23 +190,17 @@ fn extract_file_from_xz_tar(archive_path: &PathBuf, file_path: &PathBuf) -> Resu
 }
 
 fn extract_file_from_tar_data(buf: &Vec<u8>, file_path: &PathBuf) -> Result<Vec<u8>> {
-    // Create a cursor from the decompressed data
     let mut cursor = Cursor::new(buf);
 
-    // Create a tar archive from the decompressed data
     let mut archive = Archive::new(&mut cursor);
 
-    // Iterate through the entries in the tar archive
     for entry in archive.entries()? {
         let mut entry = entry?;
         let entry_path = entry.path()?;
 
-        // Convert the entry path to a string
         let entry_path_str = entry_path.to_string_lossy();
 
-        // Check if the entry path matches the file path we're looking for
         if strip_first_level(&entry_path_str) == file_path.to_string_lossy() {
-            // Read and return the contents of the entry
             let mut content = Vec::new();
             entry.read_to_end(&mut content)?;
             return Ok(content);
