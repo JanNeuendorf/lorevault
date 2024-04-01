@@ -38,7 +38,7 @@ path = "subfolder/my_file"
 hash = "741C077E70E4869ADBC29CCC34B7935B58DDAC16A4B8007AC127181E2148F468"
 tags = ["tag1","tag2"]
 ```
-This file will only be in the folder, if one of the tags is given. 
+This file will only be in the folder if one of the tags is given. 
 It will replace untagged files at the same path.
 
 ### CLI
