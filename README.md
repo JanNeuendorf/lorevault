@@ -1,4 +1,4 @@
-Lorevault is a simple program that creates a folder from a declerative configuration file. 
+Lorevault is a simple program that creates a folder from a declarative configuration file. 
 
 The config file is a `.toml` file that consists of a list of file descriptions. 
 
@@ -25,7 +25,7 @@ repo = "https://github.com/some_repo.git"
 commit = "fb17a46eb92e8d779e57a10589e9012e9aa5f948"
 path = "path/in/repo"
 ```
-Other supported sources are urls, files in archives and borg backups.
+Other supported sources are URLs, files in archives and Borg backups.
 Folders and symbolic links are not supported. 
 
 The command:
