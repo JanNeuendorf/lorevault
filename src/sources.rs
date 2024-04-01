@@ -42,7 +42,7 @@ impl FileSource {
         match self {
             FileSource::Local { path } => {
                 if path.is_relative() {
-                    //nothing for now
+                    return Err(format_err!("Relative paths are not allowed!"));
                 }
                 fs::read(path).context("could not read local file")
             }

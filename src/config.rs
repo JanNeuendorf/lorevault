@@ -2,7 +2,7 @@ use crate::cli::source_from_string;
 use crate::sources::FileSource;
 use anyhow:: Result;
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::{fs, path::PathBuf};
 use anyhow::format_err;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -42,7 +42,13 @@ impl Config {
 
 
     fn from_filesource(source:&FileSource)->Result<Self>{
-        let toml_string=String::from_utf8(source.fetch()?)?;
+        let data=match source{
+            FileSource::Local { path }=>{
+                fs::read(path)?
+            },
+            _=>{source.fetch()?}
+        };
+        let toml_string=String::from_utf8(data)?;
         Ok(toml::from_str(&toml_string)?)
     }
 

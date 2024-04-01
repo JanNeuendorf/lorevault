@@ -9,7 +9,7 @@ hash = "741C077E70E4869ADBC29CCC34B7935B58DDAC16A4B8007AC127181E2148F468"
 # The list is checked in order, so a local copy should be listed first.
 [[file.source]] # It could a local file
 type = "file"
-path = "/home/jan/Dropbox/coding/lorevault/tmp.py"
+path = "/home/jan/Dropbox/coding/lorevault/tmp.py" # It must be an absolute path
 
 [[file.source]] # A remote or local git-repo
 type = "git"

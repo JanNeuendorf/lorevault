@@ -61,7 +61,7 @@ fn check(config_path: &str) -> Result<()> {
         for source in &file.sources {
             if let FileSource::Local { path }=source{
                 if path.is_relative(){
-                    let warn="Relative paths should be avoided!";
+                    let warn="Relative paths are not allowed!";
                     println!("{}",warn.red());
                 }
             }
