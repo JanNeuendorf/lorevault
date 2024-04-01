@@ -2,27 +2,25 @@
 # A Lorevault config specifies a list of files that can be synced to a local folder.
 [[file]]
 # This is the relative path of the file in the folder. The parent folder is created automatically.
-path = "subfolder/corrs.py"
+path = "subfolder/my_file"
 # The optional sha3-256 hash of the file.
 hash = "741C077E70E4869ADBC29CCC34B7935B58DDAC16A4B8007AC127181E2148F468"
 # Then we list sources for the file.
 # The list is checked in order, so a local copy should be listed first.
 [[file.source]] # It could a local file
 type = "file"
-path = "/home/jan/Dropbox/coding/lorevault/tmp.py" # It must be an absolute path
+path = "/path/to/local/copy" # It must be an absolute path
 
 [[file.source]] # A remote or local git-repo
 type = "git"
-repo = "https://github.com/fjosw/pyerrors.git"
+repo = "https://github.com/some_repo.git"
 commit = "fb17a46eb92e8d779e57a10589e9012e9aa5f948"
-path = "pyerrors/correlators.py"
-
+path = "path/in/repo"
 
 [[file]] 
 path = "readmefile.md"
 tags = ["documentation"] # This file will only be in the folder, if the tag "documentation" is given. 
 # It will replace untagged files at the same path.
-
 [[file.source]] # Here the contents of the file are specified directly
 type = "text"
 content = """
@@ -36,22 +34,21 @@ hash = "B314E28493EAE9DAB57AC4F0C6D887BDDBBEB810E900D818395ACE558E96516D"
 
 [[file.source]] # We can extract files from archives. Unencrypted zip,tar and tar.xz files are supported.
 type = "archive"
-archive = "/home/jan/Downloads/testarchive1.zip"
+archive = "path/to/archive.zip"
 path = "subfolder/file.txt" # The path within the archive
 
 [[file]]
 path = "results/someimage.jpg"
 hash = "A000AE6EB9603F2FCEDD6CB9C370843DAB835E5AF80C81CA3A2D248D454629BC"
-
 [[file.source]]
 type = "http"
-url = "https://www.welcomewildlife.com/wp-content/uploads/2015/01/Raccoon-face-1024x873.jpg"
+url = "https://www.website.jpg"
 
-[[file]] # We can fetch a file from a borg backup file. Encrypted backups not supported
+[[file]] # We can fetch a file from a borg backup file. Encrypted backups are not supported
 path = "from_backup"
 hash= "5388B6957DA4A3FB7902E3831589026687977FAE13850179D56A0F91C919F7D5"
 [[file.source]]
 type = "borg"
-archive = "/home/jan/Downloads/borgtest2"
+archive = "path/to/backup"
 backup_id="c89315-a02ccc1a"
-path="/home/jan/Downloads/testarchive2/tectonic"
+path="path/inside/backup"
