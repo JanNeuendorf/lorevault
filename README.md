@@ -50,7 +50,7 @@ lorevault sync config.toml my_folder -t customtag
 creates the folder according to the recipe. 
 If the folder already exists, it is restored to the prescribed state with minimal work.
 
-Other subcommands are `check`, to see which sources are valid, and `hash` to get the SHA3-256 of a file.
+Other subcommands are `check`, to see which sources are valid, `example` to write out a configuration file, and `hash` to get the SHA3-256 of a file.
 
 
 
