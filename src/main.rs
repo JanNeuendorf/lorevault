@@ -75,12 +75,6 @@ fn check(config_path: &str) -> Result<()> {
         let mut working_hash = file.hash.clone();
         let mut misses = 0;
         for source in &file.sources {
-            if let FileSource::Local { path } = source {
-                if path.is_relative() {
-                    let warn = "Relative paths are not allowed!";
-                    println!("{}", warn.red());
-                }
-            }
             source_counter += 1;
             match &source.fetch() {
                 Ok(contents) => {
@@ -88,9 +82,6 @@ fn check(config_path: &str) -> Result<()> {
                     match &working_hash {
                         Some(h) => {
                             if h != &current_hash {
-                                let warning = format!("Hash not correct for {:?}", source);
-
-                                println!("{}", warning.red());
                                 return Err(format_err!(
                                     "Hash did not match for {}",
                                     display_filename(file.get_path(), &file.get_tags())
