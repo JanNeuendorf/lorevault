@@ -114,11 +114,6 @@ fn check(config_path: &str) -> Result<()> {
                     println!("{}", format!("{}", e).yellow());
                     misses = misses + 1;
                     if misses == file.sources.len() {
-                        let warning = format!(
-                            "No valid sources for {}",
-                            display_filename(file.get_path(), &file.get_tags())
-                        );
-                        println!("{}", warning.red());
                         return Err(format_err!(
                             "No valid sources for {}",
                             display_filename(file.get_path(), &file.get_tags())
