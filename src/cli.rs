@@ -1,9 +1,9 @@
-use anyhow::{format_err, Ok, Result};
+use crate::*;
 use clap::{Parser, Subcommand};
 use regex::Regex;
-use std::path::PathBuf;
 
-use crate::sources::FileSource;
+
+
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about =Some("Make a folder reproducible by specifying its contents in a file."))]
@@ -23,6 +23,8 @@ pub enum Commands {
         output: PathBuf,
         #[arg(short, long)]
         tags: Vec<String>,
+        #[arg(long,default_value="false",help="Overwrite target folder without confirmation")]
+        no_confirm:bool,
     },
     #[command(
         about = "Print a report.",
@@ -59,10 +61,10 @@ fn extract_components(s: &str) -> Option<(String, String, String)> {
     }
 }
 
-pub fn source_from_string(general_path: &str) -> Result<FileSource> {
+pub fn source_from_string(general_path: &str) -> Result<sources::FileSource> {
     if is_repo(general_path) {
         match extract_components(general_path) {
-            Some((repo, commit, path)) => Ok(FileSource::Git {
+            Some((repo, commit, path)) => Ok(sources::FileSource::Git {
                 repo: repo.into(),
                 commit: commit.into(),
                 path: path.into(),
@@ -70,7 +72,7 @@ pub fn source_from_string(general_path: &str) -> Result<FileSource> {
             None => Err(format_err!("could not parse repo string")),
         }
     } else {
-        Ok(FileSource::Local {
+        Ok(sources::FileSource::Local {
             path: general_path.into(),
         })
     }
@@ -82,11 +84,11 @@ mod test {
 
     #[test]
     fn test_repo_string() {
-        assert!(is_repo("https://github.com/fjosw/pyerrors.git#fb17a46eb92e8d779e57a10589e9012e9aa5f948:pyerrors/correlators.py"));
-        assert_eq!(extract_components("https://github.com/fjosw/pyerrors.git#fb17a46eb92e8d779e57a10589e9012e9aa5f948:pyerrors/correlators.py"),
-        Some(("https://github.com/fjosw/pyerrors.git".into(),"fb17a46eb92e8d779e57a10589e9012e9aa5f948".into(),"pyerrors/correlators.py".into())));
+        assert!(is_repo("https://github.com/some/repo.git#fb17a46eb92e8d779e57a10589e9012e9aa5f948:local/path.txt"));
+        assert_eq!(extract_components("https://github.com/some/repo.git#fb17a46eb92e8d779e57a10589e9012e9aa5f948:local/path.txt"),
+        Some(("https://github.com/some/repo.git".into(),"fb17a46eb92e8d779e57a10589e9012e9aa5f948".into(),"local/path.txt".into())));
         assert!(!is_repo(
-            "https://github.com/fjosw/pyerrors.git:pyerrors/correlators.py"
+            "https://github.com/some/repo.git:local/path.txt"
         ));
         assert!(!is_repo("/home/somefile.toml"));
     }

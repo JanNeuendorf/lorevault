@@ -3,7 +3,7 @@
 [[file]]
 # This is the relative path of the file in the folder. The parent folder is created automatically.
 path = "subfolder/my_file"
-# The optional sha3-256 hash of the file.
+# The optional SHA3-256 hash of the file.
 hash = "741C077E70E4869ADBC29CCC34B7935B58DDAC16A4B8007AC127181E2148F468"
 # Then we list sources for the file.
 # The list is checked in order, so a local copy should be listed first.
@@ -51,4 +51,4 @@ hash= "5388B6957DA4A3FB7902E3831589026687977FAE13850179D56A0F91C919F7D5"
 type = "borg"
 archive = "path/to/backup"
 backup_id="c89315-a02ccc1a"
-path="path/inside/backup"
+path="/path/inside/backup"

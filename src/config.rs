@@ -1,9 +1,5 @@
-use crate::cli::source_from_string;
-use crate::sources::FileSource;
-use anyhow::format_err;
-use anyhow::Result;
+use crate::*;
 use serde::{Deserialize, Serialize};
-use std::{fs, path::PathBuf};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -53,7 +49,7 @@ impl Config {
     }
 
     pub fn from_general_path(general_path: &str) -> Result<Self> {
-        let source = source_from_string(general_path)?;
+        let source = cli::source_from_string(general_path)?;
         Self::from_filesource(&source)
     }
 }

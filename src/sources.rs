@@ -1,18 +1,12 @@
-use anyhow::{format_err, Context, Result};
+use crate::*;
 
-use colored::*;
 use git2::{Oid, Repository};
 use sha3::{Digest, Sha3_256};
-use std::path::PathBuf;
 use std::process::Command;
-use std::{fs, io::Read};
 use tar::Archive;
 use tempfile::TempDir;
 use xz2::read::XzDecoder;
-
-use std::io::Cursor;
 use zip::read::ZipArchive;
-
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -20,7 +14,7 @@ use serde::{Deserialize, Serialize};
 pub enum FileSource {
     #[serde(rename = "file")]
     Local { path: PathBuf },
-    #[serde(rename = "http")]
+    #[serde(rename = "http",alias="url")]
     Download { url: String },
     #[serde(rename = "git")]
     Git {

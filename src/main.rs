@@ -1,22 +1,21 @@
-use anyhow::Result;
-use std::{fs, path::PathBuf, process::exit};
 mod cli;
 mod config;
 mod memfolder;
 mod sources;
-use anyhow::format_err;
+use anyhow::{Result,format_err,Context,Error};
+use std::{fs, path::PathBuf, process::exit,io::{Read,Cursor}};
 use clap::Parser;
 use cli::{Cli, Commands};
 use colored::*;
 use config::Config;
 use memfolder::MemFolder;
-use sources::{compute_hash, FileSource};
+use sources::{compute_hash, FileSource,fetch_first_valid};
 
 fn main() {
     let cli = Cli::parse();
 
     let result = match &cli.command {
-        Commands::Sync { output, file, tags } => sync_folder(output, file, tags),
+        Commands::Sync { output, file, tags ,no_confirm} => sync_folder(output, file, tags,*no_confirm),
         Commands::Check { file } => check(file),
         Commands::Example {} => write_example_config(),
         Commands::Hash { file } => print_hash(file),
@@ -28,14 +27,11 @@ fn main() {
     }
 }
 
-fn sync_folder(output: &PathBuf, config_path: &str, tags: &Vec<String>) -> Result<()> {
+fn sync_folder(output: &PathBuf, config_path: &str, tags: &Vec<String>,no_confirm:bool) -> Result<()> {
     let conf = Config::from_general_path(config_path)?;
     let reference = MemFolder::load_from_folder(output).unwrap_or(MemFolder::empty());
-    if reference.0.is_empty() {
-        println!("Clean Sync");
-    }
     let memfolder = MemFolder::load_first_valid_with_ref(&conf, tags, &reference)?;
-    memfolder.write_to_folder(output)?;
+    memfolder.write_to_folder(output,no_confirm)?;
     Ok(())
 }
 
