@@ -52,7 +52,9 @@ If the folder already exists, it is restored to the prescribed state with minima
 
 Other subcommands are `check`, to see which sources are valid, `example` to write out a configuration file, and `hash` to get the SHA3-256 of a file.
 
+### Limitations
 
+The contents of the folder are created in memory, so very large files are to be avoided. 
 
 
 
