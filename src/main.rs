@@ -144,7 +144,6 @@ fn write_example_config() -> Result<()> {
 }
 
 fn print_hash(path: &str) -> Result<()> {
-    //todo does need support for general paths
     let content = fs::read(path)?;
     let hash = compute_hash(&content);
     println!("hash= \"{}\"", hash);

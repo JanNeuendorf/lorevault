@@ -79,14 +79,6 @@ fn get_files_in_folder(folder_path: &PathBuf) -> Result<Vec<PathBuf>> {
         trimmed.push(t.to_path_buf());
     }
     Ok(trimmed)
-    // Ok(get_full_paths_in_folder(folder_path)?
-    //     .iter()
-    //     .map(|p| {
-    //         p.strip_prefix(folder_path)
-    //             .unwrap_or(&PathBuf::from(""))
-    //             .to_path_buf()
-    //     })
-    //     .collect())
 }
 fn get_full_paths_in_folder(folder_path: &PathBuf) -> Result<Vec<PathBuf>> {
     let mut files = Vec::new();
