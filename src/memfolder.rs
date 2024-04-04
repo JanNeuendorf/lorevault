@@ -1,5 +1,4 @@
 use crate::*;
-use dialoguer::Confirm;
 use std::collections::HashMap;
 
 pub struct MemFolder(pub HashMap<PathBuf, Vec<u8>>);
@@ -34,13 +33,8 @@ impl MemFolder {
         Ok(memfolder)
     }
 
-    pub fn write_to_folder(&self, out_path: &PathBuf, no_confirm: bool) -> Result<()> {
+    pub fn write_to_folder(&self, out_path: &PathBuf) -> Result<()> {
         if out_path.exists() {
-            if !no_confirm {
-                if !get_confirmation(out_path, self.0.keys().count()) {
-                    return Err(format_err!("Deletion of folder not confirmed"));
-                }
-            }
             if out_path.is_dir() {
                 fs::remove_dir_all(&out_path)?;
             } else {
@@ -102,37 +96,4 @@ fn get_full_paths_in_folder(folder_path: &PathBuf) -> Result<Vec<PathBuf>> {
     }
 
     Ok(files)
-}
-
-fn get_confirmation(folder_path: &PathBuf, newcount: usize) -> bool {
-    let file_count = count_files_recursively(folder_path);
-    if file_count.is_err() {
-        return false;
-    }
-
-    let prompt = format!(
-        "Overwrite {} (total {} files) with {} files?",
-        folder_path.to_string_lossy(),
-        file_count.expect("unchecked file count"),
-        newcount
-    );
-    match Confirm::new().with_prompt(prompt).interact() {
-        Ok(true) => true,
-        _ => false,
-    }
-}
-
-fn count_files_recursively(folder_path: &PathBuf) -> Result<usize> {
-    let mut count = 0;
-    if let Ok(entries) = fs::read_dir(folder_path) {
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if path.is_file() {
-                count += 1;
-            } else if path.is_dir() {
-                count += count_files_recursively(&path)?;
-            }
-        }
-    }
-    Ok(count)
 }

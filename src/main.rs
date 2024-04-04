@@ -4,7 +4,7 @@ mod memfolder;
 mod sources;
 use anyhow::{format_err, Context, Error, Result};
 use clap::Parser;
-use cli::{Cli, Commands};
+use cli::{get_confirmation, Cli, Commands};
 use colored::*;
 use config::Config;
 use memfolder::MemFolder;
@@ -46,7 +46,12 @@ fn sync_folder(
     let conf = Config::from_general_path(config_path)?;
     let reference = MemFolder::load_from_folder(output).unwrap_or(MemFolder::empty());
     let memfolder = MemFolder::load_first_valid_with_ref(&conf, tags, &reference)?;
-    memfolder.write_to_folder(output, no_confirm)?;
+
+    if !no_confirm && output.exists() && !get_confirmation(output, memfolder.0.keys().count()) {
+        return Err(format_err!("Folder overwrite not confirmed."));
+    }
+
+    memfolder.write_to_folder(output)?;
     Ok(())
 }
 

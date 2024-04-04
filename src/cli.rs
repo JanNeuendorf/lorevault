@@ -1,5 +1,6 @@
 use crate::*;
 use clap::{Parser, Subcommand};
+use dialoguer::Confirm;
 use regex::Regex;
 
 #[derive(Parser, Debug)]
@@ -77,6 +78,39 @@ pub fn source_from_string(general_path: &str) -> Result<sources::FileSource> {
             path: general_path.into(),
         })
     }
+}
+
+pub fn get_confirmation(folder_path: &PathBuf, newcount: usize) -> bool {
+    let file_count = count_files_recursively(folder_path);
+    if file_count.is_err() {
+        return false;
+    }
+
+    let prompt = format!(
+        "Overwrite {} (total {} files) with {} files?",
+        folder_path.to_string_lossy(),
+        file_count.expect("unchecked file count"),
+        newcount
+    );
+    match Confirm::new().with_prompt(prompt).interact() {
+        Ok(true) => true,
+        _ => false,
+    }
+}
+
+fn count_files_recursively(folder_path: &PathBuf) -> Result<usize> {
+    let mut count = 0;
+    if let Ok(entries) = fs::read_dir(folder_path) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_file() {
+                count += 1;
+            } else if path.is_dir() {
+                count += count_files_recursively(&path)?;
+            }
+        }
+    }
+    Ok(count)
 }
 
 #[cfg(test)]
