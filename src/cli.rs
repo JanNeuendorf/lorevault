@@ -2,9 +2,6 @@ use crate::*;
 use clap::{Parser, Subcommand};
 use regex::Regex;
 
-
-
-
 #[derive(Parser, Debug)]
 #[command(version, about, long_about =Some("Make a folder reproducible by specifying its contents in a file."))]
 #[command(propagate_version = true)]
@@ -23,8 +20,12 @@ pub enum Commands {
         output: PathBuf,
         #[arg(short, long)]
         tags: Vec<String>,
-        #[arg(long,default_value="false",help="Overwrite target folder without confirmation")]
-        no_confirm:bool,
+        #[arg(
+            long,
+            default_value = "false",
+            help = "Overwrite target folder without confirmation"
+        )]
+        no_confirm: bool,
     },
     #[command(
         about = "Print a report.",
@@ -87,9 +88,7 @@ mod test {
         assert!(is_repo("https://github.com/some/repo.git#fb17a46eb92e8d779e57a10589e9012e9aa5f948:local/path.txt"));
         assert_eq!(extract_components("https://github.com/some/repo.git#fb17a46eb92e8d779e57a10589e9012e9aa5f948:local/path.txt"),
         Some(("https://github.com/some/repo.git".into(),"fb17a46eb92e8d779e57a10589e9012e9aa5f948".into(),"local/path.txt".into())));
-        assert!(!is_repo(
-            "https://github.com/some/repo.git:local/path.txt"
-        ));
+        assert!(!is_repo("https://github.com/some/repo.git:local/path.txt"));
         assert!(!is_repo("/home/somefile.toml"));
     }
 }

@@ -2,20 +2,30 @@ mod cli;
 mod config;
 mod memfolder;
 mod sources;
-use anyhow::{Result,format_err,Context,Error};
-use std::{fs, path::PathBuf, process::exit,io::{Read,Cursor}};
+use anyhow::{format_err, Context, Error, Result};
 use clap::Parser;
 use cli::{Cli, Commands};
 use colored::*;
 use config::Config;
 use memfolder::MemFolder;
-use sources::{compute_hash, FileSource,fetch_first_valid};
+use sources::{compute_hash, fetch_first_valid, FileSource};
+use std::{
+    fs,
+    io::{Cursor, Read},
+    path::PathBuf,
+    process::exit,
+};
 
 fn main() {
     let cli = Cli::parse();
 
     let result = match &cli.command {
-        Commands::Sync { output, file, tags ,no_confirm} => sync_folder(output, file, tags,*no_confirm),
+        Commands::Sync {
+            output,
+            file,
+            tags,
+            no_confirm,
+        } => sync_folder(output, file, tags, *no_confirm),
         Commands::Check { file } => check(file),
         Commands::Example {} => write_example_config(),
         Commands::Hash { file } => print_hash(file),
@@ -27,11 +37,16 @@ fn main() {
     }
 }
 
-fn sync_folder(output: &PathBuf, config_path: &str, tags: &Vec<String>,no_confirm:bool) -> Result<()> {
+fn sync_folder(
+    output: &PathBuf,
+    config_path: &str,
+    tags: &Vec<String>,
+    no_confirm: bool,
+) -> Result<()> {
     let conf = Config::from_general_path(config_path)?;
     let reference = MemFolder::load_from_folder(output).unwrap_or(MemFolder::empty());
     let memfolder = MemFolder::load_first_valid_with_ref(&conf, tags, &reference)?;
-    memfolder.write_to_folder(output,no_confirm)?;
+    memfolder.write_to_folder(output, no_confirm)?;
     Ok(())
 }
 

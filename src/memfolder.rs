@@ -1,7 +1,6 @@
 use crate::*;
-use std::collections::HashMap;
 use dialoguer::Confirm;
-
+use std::collections::HashMap;
 
 pub struct MemFolder(pub HashMap<PathBuf, Vec<u8>>);
 
@@ -35,17 +34,14 @@ impl MemFolder {
         Ok(memfolder)
     }
 
-    pub fn write_to_folder(&self, out_path: &PathBuf,no_confirm:bool) -> Result<()> {
+    pub fn write_to_folder(&self, out_path: &PathBuf, no_confirm: bool) -> Result<()> {
         if out_path.exists() {
-            if !no_confirm{
-                if !get_confirmation(out_path, self.0.keys().count()){
+            if !no_confirm {
+                if !get_confirmation(out_path, self.0.keys().count()) {
                     return Err(format_err!("Deletion of folder not confirmed"));
                 }
-
-                    
             }
             if out_path.is_dir() {
-              
                 fs::remove_dir_all(&out_path)?;
             } else {
                 return Err(Error::msg("out file exists, but is not a directory"));
@@ -116,19 +112,23 @@ fn get_full_paths_in_folder(folder_path: &PathBuf) -> Result<Vec<PathBuf>> {
     Ok(files)
 }
 
-
-fn get_confirmation(folder_path:&PathBuf,newcount:usize)->bool{
+fn get_confirmation(folder_path: &PathBuf, newcount: usize) -> bool {
     let file_count = count_files_recursively(folder_path);
-    if file_count.is_err(){return false}
-
-    let prompt=format!("Overwrite {} (total {} files) with {} files?",folder_path.to_string_lossy(),file_count.expect("unchecked file count"),newcount);
-    match Confirm::new().with_prompt(prompt).interact(){
-        Ok(true)=>true,_=>false
+    if file_count.is_err() {
+        return false;
     }
 
+    let prompt = format!(
+        "Overwrite {} (total {} files) with {} files?",
+        folder_path.to_string_lossy(),
+        file_count.expect("unchecked file count"),
+        newcount
+    );
+    match Confirm::new().with_prompt(prompt).interact() {
+        Ok(true) => true,
+        _ => false,
+    }
 }
-
-
 
 fn count_files_recursively(folder_path: &PathBuf) -> Result<usize> {
     let mut count = 0;

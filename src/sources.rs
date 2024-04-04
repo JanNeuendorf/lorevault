@@ -1,20 +1,20 @@
 use crate::*;
 
 use git2::{Oid, Repository};
+use serde::{Deserialize, Serialize};
 use sha3::{Digest, Sha3_256};
 use std::process::Command;
 use tar::Archive;
 use tempfile::TempDir;
 use xz2::read::XzDecoder;
 use zip::read::ZipArchive;
-use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum FileSource {
     #[serde(rename = "file")]
     Local { path: PathBuf },
-    #[serde(rename = "http",alias="url")]
+    #[serde(rename = "http", alias = "url")]
     Download { url: String },
     #[serde(rename = "git")]
     Git {
