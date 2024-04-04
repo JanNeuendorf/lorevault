@@ -36,7 +36,7 @@ pub enum Commands {
         #[arg(help = "Config file")]
         file: String,
     },
-    #[command(about = "Writes out an example file")]
+    #[command(about = "Writes out an example configuration file")]
     Example {},
     #[command(about = "Prints the sha3-256 hash of a file.")]
     Hash { file: String },

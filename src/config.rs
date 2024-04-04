@@ -1,5 +1,4 @@
 use crate::*;
-use dialoguer::Confirm;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

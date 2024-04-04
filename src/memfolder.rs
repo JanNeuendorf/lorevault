@@ -63,6 +63,10 @@ impl MemFolder {
         }
         Ok(memfolder)
     }
+    #[allow(unused)]
+    pub fn size_in_bytes(&self) -> usize {
+        self.0.values().map(|v| v.len()).sum()
+    }
 }
 
 fn get_files_in_folder(folder_path: &PathBuf) -> Result<Vec<PathBuf>> {
