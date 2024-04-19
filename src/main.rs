@@ -137,7 +137,7 @@ fn write_example_config() -> Result<()> {
 fn print_hash(path: &str) -> Result<()> {
     let content = fs::read(path)?;
     let hash = compute_hash(&content);
-    println!("hash= \"{}\"", hash);
+    println!("hash = \"{}\"", hash);
     Ok(())
 }
 
