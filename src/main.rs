@@ -2,18 +2,21 @@ mod cli;
 mod config;
 mod memfolder;
 mod sources;
+mod variables;
 use anyhow::{format_err, Context, Error, Result};
 use clap::Parser;
 use cli::{get_confirmation, Cli, Commands};
 use colored::*;
-use config::Config;
+use config::{Config,File};
 use memfolder::MemFolder;
 use sources::{compute_hash, fetch_first_valid, FileSource};
+use variables::*;
 use std::{
     fs,
     io::{Cursor, Read},
     path::PathBuf,
     process::exit,
+    collections::HashMap
 };
 
 fn main() {

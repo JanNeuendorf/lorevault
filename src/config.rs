@@ -1,13 +1,20 @@
 use crate::*;
 use serde::{Deserialize, Serialize};
+use serde_with::serde_as;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize,PartialEq)]
+#[serde_as]
 pub struct Config {
-    #[serde(rename = "file")]
+    #[serde(default,alias="var")]
+    variables:HashMap<String,String>,
+    #[serde(rename = "file",alias="files")]
     content: Vec<File>,
 }
 
 impl Config {
+    pub fn new(files:Vec<File>,variables:HashMap<String,String>)->Self{
+        return Self{content:files,variables}
+    }
     pub fn get_active(&self, tags: &Vec<String>) -> Result<Vec<File>> {
         let mut new_content = vec![];
         let mut paths = vec![];
@@ -52,9 +59,14 @@ impl Config {
         let source = cli::source_from_string(general_path)?;
         Self::from_filesource(&source)
     }
+    pub fn write(&self,path:&PathBuf)->Result<()>{
+        let toml=toml::to_string_pretty(self)?;
+        fs::write(path, toml)?;
+        Ok(())
+    }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize,PartialEq)]
 
 pub struct File {
     pub path: PathBuf,
