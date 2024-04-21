@@ -98,7 +98,7 @@ impl Config {
             content: new.content,
         })
     }
-    fn tags(&self) -> Vec<String> {
+    pub fn tags(&self) -> Vec<String> {
         let mut taglists = vec![];
         for file in &self.content {
             taglists.push(file.tags.clone().unwrap_or(vec![]));

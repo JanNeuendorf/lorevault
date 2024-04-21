@@ -40,6 +40,8 @@ pub enum Commands {
     Example {},
     #[command(about = "Prints the sha3-256 hash of a file.")]
     Hash { file: String },
+    #[command(about = "Lists all the tags defined in the file")]
+    Tags { file: String },
 }
 
 fn is_repo(general_path: &str) -> bool {

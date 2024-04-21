@@ -32,6 +32,7 @@ fn main() {
         Commands::Check { file } => check(file),
         Commands::Example {} => write_example_config(),
         Commands::Hash { file } => print_hash(file),
+        Commands::Tags { file } => print_tags(file),
     };
     if let Err(e) = result {
         let warning = format!("Error: {}", e);
@@ -143,7 +144,13 @@ fn print_hash(path: &str) -> Result<()> {
     println!("hash = \"{}\"", hash);
     Ok(())
 }
-
+fn print_tags(configpath: &str) -> Result<()> {
+    let config = Config::from_general_path(configpath)?;
+    for tag in &config.tags() {
+        println!("- {}", tag);
+    }
+    Ok(())
+}
 #[cfg(test)]
 mod test {
     use super::*;
