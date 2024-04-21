@@ -29,6 +29,15 @@ impl Config {
         if !self.variables_set {
             return Err(format_err!("Variables must have been set to get file list"));
         }
+        let defined_tags = self.tags();
+        for requested_tag in tags {
+            if !defined_tags.contains(requested_tag) {
+                return Err(format_err!(
+                    "The tag {} is not defined in the config file",
+                    requested_tag
+                ));
+            }
+        }
         let mut new_content = vec![];
         let mut paths = vec![];
         let tagged_paths = self
@@ -88,6 +97,13 @@ impl Config {
             variables_set: true,
             content: new.content,
         })
+    }
+    fn tags(&self) -> Vec<String> {
+        let mut taglists = vec![];
+        for file in &self.content {
+            taglists.push(file.tags.clone().unwrap_or(vec![]));
+        }
+        vecset(taglists)
     }
 }
 

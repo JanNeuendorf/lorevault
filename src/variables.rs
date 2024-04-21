@@ -78,12 +78,16 @@ impl VariableCompletion for FileSource {
                 Ok(vecset(vec![rb_repo, rb_commit, rb_path]))
             }
             FileSource::Local { path } => path.to_owned().required_variables(),
-            FileSource::Text { content ,ignore_variables} => {
-                if *ignore_variables{
-                    Ok(vec!())
-                }else{
-                content.to_owned().required_variables()}
-            },
+            FileSource::Text {
+                content,
+                ignore_variables,
+            } => {
+                if *ignore_variables {
+                    Ok(vec![])
+                } else {
+                    content.to_owned().required_variables()
+                }
+            }
         }
     }
     fn set_single_variable(&mut self, key: &str, value: &str) -> Result<FileSource> {
@@ -112,16 +116,22 @@ impl VariableCompletion for FileSource {
             FileSource::Local { path } => FileSource::Local {
                 path: path.set_single_variable(key, value)?,
             },
-            FileSource::Text { content ,ignore_variables} => {
-                if *ignore_variables{
+            FileSource::Text {
+                content,
+                ignore_variables,
+            } => {
+                if *ignore_variables {
                     FileSource::Text {
-                        content:content.clone(),ignore_variables:*ignore_variables
+                        content: content.clone(),
+                        ignore_variables: *ignore_variables,
                     }
-                }else{
-                FileSource::Text {
-                
-                content: content.set_single_variable(key, value)?,ignore_variables:*ignore_variables
-            }}},
+                } else {
+                    FileSource::Text {
+                        content: content.set_single_variable(key, value)?,
+                        ignore_variables: *ignore_variables,
+                    }
+                }
+            }
         };
         return Ok(self.clone());
     }
@@ -164,7 +174,7 @@ impl VariableCompletion for File {
     }
 }
 
-fn vecset<T: Clone + Eq + std::hash::Hash>(vecs: Vec<Vec<T>>) -> Vec<T> {
+pub fn vecset<T: Clone + Eq + std::hash::Hash>(vecs: Vec<Vec<T>>) -> Vec<T> {
     let mut union_set: HashSet<T> = HashSet::new();
     for vec in vecs {
         for element in vec {
