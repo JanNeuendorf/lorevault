@@ -52,7 +52,7 @@ path = "{{mypath}}//file.txt"
 
 [[file.source]]
 type = "text"
-content = "This file was written by {{author}}"
+content = "This file was written by {{author}}."
 ```
 They can not be used inside hashes, tags or types. 
 
