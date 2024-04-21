@@ -7,17 +7,17 @@ use anyhow::{format_err, Context, Error, Result};
 use clap::Parser;
 use cli::{get_confirmation, Cli, Commands};
 use colored::*;
-use config::{Config,File};
+use config::{Config, File};
 use memfolder::MemFolder;
 use sources::{compute_hash, fetch_first_valid, FileSource};
-use variables::*;
 use std::{
+    collections::HashMap,
     fs,
     io::{Cursor, Read},
     path::PathBuf,
     process::exit,
-    collections::HashMap
 };
+use variables::*;
 
 fn main() {
     let cli = Cli::parse();

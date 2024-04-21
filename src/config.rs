@@ -2,25 +2,31 @@ use crate::*;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
-#[derive(Debug, Clone, Serialize, Deserialize,PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde_as]
 pub struct Config {
     #[serde(default)]
     #[serde(skip)]
-    variables_set:bool,
-    #[serde(default,alias="var")]
-    variables:HashMap<String,String>,
-    #[serde(rename = "file",alias="files")]
+    variables_set: bool,
+    #[serde(default, alias = "var")]
+    variables: HashMap<String, String>,
+    #[serde(rename = "file", alias = "files")]
     content: Vec<File>,
 }
 
 impl Config {
-    pub fn new(files:Vec<File>,variables:HashMap<String,String>)->Result<Self>{
-        return Self{content:files,variables,variables_set:false}.set_variables()
+    #[allow(unused)]
+    pub fn new(files: Vec<File>, variables: HashMap<String, String>) -> Result<Self> {
+        return Self {
+            content: files,
+            variables,
+            variables_set: false,
+        }
+        .set_variables();
     }
     pub fn get_active(&self, tags: &Vec<String>) -> Result<Vec<File>> {
-        if !self.variables_set{
-            return Err(format_err!("Variables must have been set to get file list"))
+        if !self.variables_set {
+            return Err(format_err!("Variables must have been set to get file list"));
         }
         let mut new_content = vec![];
         let mut paths = vec![];
@@ -58,7 +64,7 @@ impl Config {
             _ => source.fetch()?,
         };
         let toml_string = String::from_utf8(data)?;
-        let conf:Self=toml::from_str(&toml_string)?;
+        let conf: Self = toml::from_str(&toml_string)?;
         Ok(conf.set_variables()?)
     }
 
@@ -66,20 +72,25 @@ impl Config {
         let source = cli::source_from_string(general_path)?;
         Self::from_filesource(&source)
     }
-    pub fn write(&self,path:&PathBuf)->Result<()>{
-        let toml=toml::to_string_pretty(self)?;
+    #[allow(unused)]
+    pub fn write(&self, path: &PathBuf) -> Result<()> {
+        let toml = toml::to_string_pretty(self)?;
         fs::write(path, toml)?;
         Ok(())
     }
 
-    fn set_variables(&self)->Result<Self>{
-        let mut new=self.clone();
-        new.content=new.content.set_variables(&self.variables)?;
-        Ok(Self{variables:new.variables,variables_set:true,content:new.content})
+    fn set_variables(&self) -> Result<Self> {
+        let mut new = self.clone();
+        new.content = new.content.set_variables(&self.variables)?;
+        Ok(Self {
+            variables: new.variables,
+            variables_set: true,
+            content: new.content,
+        })
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize,PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 
 pub struct File {
     pub path: PathBuf,

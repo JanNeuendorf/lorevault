@@ -1,5 +1,16 @@
 
+# ██       ██████  ██████  ███████ ██    ██  █████  ██    ██ ██   ████████ 
+# ██      ██    ██ ██   ██ ██      ██    ██ ██   ██ ██    ██ ██      ██    
+# ██      ██    ██ ██████  █████   ██    ██ ███████ ██    ██ ██      ██    
+# ██      ██    ██ ██   ██ ██       ██  ██  ██   ██ ██    ██ ██      ██    
+# ███████  ██████  ██   ██ ███████   ████   ██   ██  ██████  ███████ ██    
+#                                                                          
+                                                                         
 # A Lorevault config specifies a list of files that can be synced to a local folder.
+
+# To avoid repetition, variables can be defined.
+var.author="your name"
+
 [[file]]
 # This is the relative path of the file in the folder. The parent folder is created automatically.
 path = "subfolder/my_file"
@@ -25,8 +36,9 @@ tags = ["documentation"] # This file will only be in the folder, if the tag "doc
 type = "text"
 content = """
 ## Header
- This coud be a readme file
+ This coud be a readme file. It was written by {{author}}.
 """
+#Here, a variable was used. "{{author}}" will be replaced with the name of the variable.
 
 [[file]]
 path = "fromarchive.txt" 

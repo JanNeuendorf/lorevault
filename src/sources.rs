@@ -9,7 +9,7 @@ use tempfile::TempDir;
 use xz2::read::XzDecoder;
 use zip::read::ZipArchive;
 
-#[derive(Debug, Clone, Serialize, Deserialize,PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "type")]
 pub enum FileSource {
     #[serde(rename = "file")]

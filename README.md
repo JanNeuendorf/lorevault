@@ -41,6 +41,22 @@ tags = ["tag1","tag2"]
 This file will only be in the folder if one of the tags is given. 
 It will replace untagged files at the same path.
 
+### Variables
+To avoid repetition, variables can be set in the beginning of the file and used in the following way:
+```toml
+var.author = "your name"
+var.mypath = "some/sub/folder"
+
+[[file]]
+path = "{{mypath}}//file.txt"
+
+[[file.source]]
+type = "text"
+content = "This file was written by {{author}}"
+```
+They can not be used inside hashes, tags or types. 
+
+
 ### CLI
 
 The command:
