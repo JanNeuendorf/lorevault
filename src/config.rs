@@ -4,6 +4,7 @@ use serde_with::serde_as;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde_as]
+#[serde(deny_unknown_fields)]
 pub struct Config {
     #[serde(default)]
     #[serde(skip)]
@@ -91,7 +92,7 @@ impl Config {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-
+#[serde(deny_unknown_fields)]
 pub struct File {
     pub path: PathBuf,
     pub tags: Option<Vec<String>>,

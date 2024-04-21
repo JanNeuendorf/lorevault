@@ -11,6 +11,7 @@ use zip::read::ZipArchive;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "type")]
+#[serde(deny_unknown_fields)]
 pub enum FileSource {
     #[serde(rename = "file")]
     Local { path: PathBuf },
@@ -23,7 +24,9 @@ pub enum FileSource {
         path: PathBuf,
     },
     #[serde(rename = "text")]
-    Text { content: String },
+    Text { content: String,
+        #[serde(default)]
+    ignore_variables:bool},
     #[serde(rename = "archive")]
     Archive { archive: PathBuf, path: PathBuf },
     #[serde(rename = "borg")]
@@ -48,7 +51,7 @@ impl FileSource {
                 Ok(bytes)
             }
             FileSource::Git { repo, commit, path } => get_git_file(commit, path, repo),
-            FileSource::Text { content } => Ok(content.clone().into_bytes()),
+            FileSource::Text { content,.. } => Ok(content.clone().into_bytes()),
             FileSource::Borg {
                 archive,
                 backup_id,

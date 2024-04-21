@@ -39,6 +39,7 @@ content = """
  This coud be a readme file. It was written by {{author}}.
 """
 #Here, a variable was used. "{{author}}" will be replaced with the name of the variable.
+ignore_variables=false #This is the default. If true, the text is protected from replacements.
 
 [[file]]
 path = "fromarchive.txt" 
