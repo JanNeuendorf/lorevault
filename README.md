@@ -1,5 +1,11 @@
 Lorevault is a simple program that creates a folder from a declarative configuration file. 
 
+### Installation
+You can install lorevault using Cargo.
+```bash
+cargo install --git https://github.com/JanNeuendorf/lorevault
+```
+
 ### Config File
 The config file is a `.toml` file that consists of a list of file descriptions. 
 
