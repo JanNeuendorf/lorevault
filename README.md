@@ -59,6 +59,7 @@ path = "{{mypath}}//file.txt"
 [[file.source]]
 type = "text"
 content = "This file was written by {{author}}."
+ignore_variables=false # This is the default. If true, the text is protected from replacements.
 ```
 They can not be used inside hashes, tags or types. 
 
