@@ -118,20 +118,6 @@ fn count_files_recursively(folder_path: &PathBuf) -> Result<usize> {
     Ok(count)
 }
 
-fn get_general_path_of_config() -> Result<String> {
-    let cli = Cli::parse();
-    if let Commands::Sync { file, .. } = cli.command {
-        Ok(file.clone())
-    } else {
-        Err(format_err!("Path to config could not be found in args."))
-    }
-}
-
-pub fn get_source_of_config() -> Result<FileSource> {
-    let gp = &get_general_path_of_config()?;
-    source_from_string(gp)
-}
-
 #[cfg(test)]
 mod test {
     use super::*;

@@ -17,13 +17,12 @@ pub struct Config {
 
 impl Config {
     #[allow(unused)]
-    pub fn new(files: Vec<File>, variables: HashMap<String, String>) -> Result<Self> {
+    pub fn new(files: Vec<File>, variables: HashMap<String, String>) -> Self {
         return Self {
             content: files,
             variables,
             variables_set: false,
-        }
-        .set_variables();
+        };
     }
     pub fn get_active(&self, tags: &Vec<String>) -> Result<Vec<File>> {
         if !self.variables_set {
@@ -33,7 +32,7 @@ impl Config {
         for requested_tag in tags {
             if !defined_tags.contains(requested_tag) {
                 return Err(format_err!(
-                    "The tag {} is not defined in the config file",
+                    "The tag {} is not defined in the config file.",
                     requested_tag
                 ));
             }
@@ -75,7 +74,7 @@ impl Config {
         };
         let toml_string = String::from_utf8(data)?;
         let conf: Self = toml::from_str(&toml_string)?;
-        Ok(conf.set_variables()?)
+        Ok(conf.set_variables(source)?)
     }
 
     pub fn from_general_path(general_path: &str) -> Result<Self> {
@@ -89,7 +88,7 @@ impl Config {
         Ok(())
     }
 
-    fn set_variables(&self) -> Result<Self> {
+    pub fn set_variables(&self, source: &FileSource) -> Result<Self> {
         let mut new = self.clone();
         if self
             .variables
@@ -101,12 +100,12 @@ impl Config {
         }
 
         let mut vars = self.variables.clone();
-        match get_source_of_config() {
-            Ok(FileSource::Git { repo, commit, .. }) => {
+        match source {
+            FileSource::Git { repo, commit, .. } => {
                 vars.insert("SELF_COMMIT".to_string(), commit.to_string());
                 vars.insert("SELF_REPO".to_string(), repo.to_string());
             }
-            Ok(FileSource::Local { path }) => {
+            FileSource::Local { path } => {
                 vars.insert(
                     "SELF_PARENT".to_string(),
                     path.parent()
