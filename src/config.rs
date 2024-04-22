@@ -91,7 +91,25 @@ impl Config {
 
     fn set_variables(&self) -> Result<Self> {
         let mut new = self.clone();
-        new.content = new.content.set_variables(&self.variables)?;
+        if self
+            .variables
+            .keys()
+            .into_iter()
+            .any(|k| k.starts_with("SELF_"))
+        {
+            return Err(format_err!("Variables starting with SELF_ are protected."));
+        }
+
+        let mut vars = self.variables.clone();
+        match get_source_of_config() {
+            Ok(FileSource::Git { repo, commit, .. }) => {
+                vars.insert("SELF_COMMIT".to_string(), commit.to_string());
+                vars.insert("SELF_REPO".to_string(), repo.to_string());
+            }
+            _ => {}
+        }
+
+        new.content = new.content.set_variables(&vars)?;
         Ok(Self {
             variables: new.variables,
             variables_set: true,

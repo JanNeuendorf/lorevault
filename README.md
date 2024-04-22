@@ -62,6 +62,9 @@ content = "This file was written by {{author}}."
 ignore_variables=false # This is the default. If true, the text is protected.
 ```
 They can not be used inside hashes, tags or types. 
+If the config file is read from a git-repo, the variables 
+`SELF_REPO` and `SELF_COMMIT` are set automatically.
+This allows references to files from the same commit.  
 
 
 ### CLI
@@ -74,6 +77,8 @@ creates the folder according to the recipe.
 If the folder already exists, it is restored to the prescribed state with minimal work.
 
 Other subcommands are `check`, to see which sources are valid, `example` to write out a configuration file, `tags` to list the available tags, and `hash` to get the SHA3-256 of a file.
+
+The configuration file can be read in from a local or remote git-repo with the syntax `repo#commit:path`.
 
 ### Limitations
 

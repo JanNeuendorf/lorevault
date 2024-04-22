@@ -10,6 +10,7 @@
 
 # To avoid repetition, variables can be defined.
 var.author="your name"
+# If the file is in a repo, SELF_REPO and SELF_COMMIT are set.
 
 [[file]]
 # This is the relative path of the file in the folder. The parent folder is created automatically.
@@ -38,8 +39,8 @@ content = """
 ## Header
  This coud be a readme file. It was written by {{author}}.
 """
-#Here, a variable was used. "{{author}}" will be replaced with the name of the variable.
-ignore_variables=false #This is the default. If true, the text is protected from replacements.
+# Here, a variable was used. "{{author}}" will be replaced with the name of the variable.
+ignore_variables=false # This is the default. If true, the text is protected from replacements.
 
 [[file]]
 path = "fromarchive.txt" 

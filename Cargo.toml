@@ -1,6 +1,6 @@
 [package]
 name = "lorevault"
-version = "0.4.2"
+version = "0.4.3"
 edition = "2021"
 authors = ["Jan Neuendorf"]
 description = "A simple program to create a folder from a recipe."
