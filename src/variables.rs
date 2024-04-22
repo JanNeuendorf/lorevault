@@ -65,16 +65,6 @@ impl VariableCompletion for FileSource {
                 let rb_path = path.to_owned().required_variables()?;
                 Ok(vecset(vec![rb_archive, rb_path]))
             }
-            FileSource::Borg {
-                archive,
-                backup_id,
-                path,
-            } => {
-                let rb_archive = archive.to_owned().required_variables()?;
-                let rb_path = path.to_owned().required_variables()?;
-                let rb_bid = backup_id.to_owned().required_variables()?;
-                Ok(vecset(vec![rb_archive, rb_path, rb_bid]))
-            }
             FileSource::Download { url } => url.clone().required_variables(),
             FileSource::Git { repo, commit, path } => {
                 let rb_path = path.to_owned().required_variables()?;
@@ -100,15 +90,6 @@ impl VariableCompletion for FileSource {
             FileSource::Auto(s) => Self::Auto(s.set_single_variable(key, value)?),
             FileSource::Archive { archive, path } => FileSource::Archive {
                 archive: archive.set_single_variable(key, value)?,
-                path: path.set_single_variable(key, value)?,
-            },
-            FileSource::Borg {
-                archive,
-                backup_id,
-                path,
-            } => FileSource::Borg {
-                archive: archive.set_single_variable(key, value)?,
-                backup_id: backup_id.set_single_variable(key, value)?,
                 path: path.set_single_variable(key, value)?,
             },
             FileSource::Download { url } => FileSource::Download {

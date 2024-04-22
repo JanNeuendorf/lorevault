@@ -63,12 +63,3 @@ hash = "A000AE6EB9603F2FCEDD6CB9C370843DAB835E5AF80C81CA3A2D248D454629BC"
 [[file.source]]
 type = "http"
 url = "https://www.website.jpg"
-
-[[file]] # We can fetch a file from a borg backup file. Encrypted backups are not supported
-path = "from_backup"
-hash= "5388B6957DA4A3FB7902E3831589026687977FAE13850179D56A0F91C919F7D5"
-[[file.source]]
-type = "borg"
-archive = "path/to/backup"
-backup_id="c89315-a02ccc1a"
-path="/path/inside/backup"

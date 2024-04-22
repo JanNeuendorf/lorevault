@@ -31,12 +31,6 @@ pub enum FileSource {
     },
     #[serde(rename = "archive")]
     Archive { archive: PathBuf, path: PathBuf },
-    #[serde(rename = "borg")]
-    Borg {
-        archive: PathBuf,
-        backup_id: String,
-        path: PathBuf,
-    },
     #[serde(untagged)]
     Auto(String),
 }
@@ -63,11 +57,6 @@ impl FileSource {
             }
             FileSource::Git { repo, commit, path } => get_git_file(commit, path, repo),
             FileSource::Text { content, .. } => Ok(content.clone().into_bytes()),
-            FileSource::Borg {
-                archive,
-                backup_id,
-                path,
-            } => read_from_borg(archive, backup_id, path),
             FileSource::Archive { archive, path } => {
                 let filename = archive
                     .file_name()
@@ -247,36 +236,4 @@ fn strip_first_level(s: &str) -> String {
 
 fn parse_auto_source(auto: &str) -> Result<FileSource> {
     source_from_string_simple(auto)
-}
-
-fn read_from_borg(
-    archive_path: &PathBuf,
-    backup_name: &str,
-    sub_path: &PathBuf,
-) -> Result<Vec<u8>> {
-    let borg_exists = Command::new("borg").arg("-V").output()?.status.success();
-    if !borg_exists {
-        return Err(format_err!("Borg might not be installed!"));
-    }
-    let backup = &format!(
-        "{}::{}",
-        archive_path
-            .to_str()
-            .context("Path not printable for Borg command.")?,
-        backup_name
-    );
-    let output = Command::new("borg")
-        .arg("extract")
-        .arg(backup)
-        .arg(
-            sub_path
-                .to_str()
-                .context("Subpath not printable for Borg command.")?,
-        )
-        .arg("--stdout")
-        .output()?;
-    if !output.status.success() {
-        return Err(format_err!("Call to Borg failed."));
-    }
-    return Ok(output.stdout);
 }

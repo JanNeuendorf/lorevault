@@ -67,7 +67,7 @@ repo = "https://github.com/some_repo.git"
 commit = "fb17a46eb92e8d779e57a10589e9012e9aa5f948"
 path = "path/in/repo"
 ```
-Other supported sources are text, URLs, files in archives and Borg backups.
+Other supported sources are text, URLs and files in archives.
 Folders and symbolic links are not supported. 
 
 When using an inline table, we can use the following notation
@@ -129,11 +129,6 @@ Variables are not shared between files. Tags for included files can only be acti
 - The contents of the folder are created in memory, so very large files are to be avoided.
 - Every file must be named explicitly. There is no support for including folders.
 - There is no control over the files metadata/permissions.
-
-
-
-
-
 
 
 
