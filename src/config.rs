@@ -128,6 +128,7 @@ impl Config {
                         .context("Path must be printable")?
                         .to_string(),
                 );
+                vars.insert("SELF_ROOT".to_string(), format!("{}#{}:", repo, commit));
             }
             FileSource::Local { path } => {
                 vars.insert(
@@ -137,6 +138,10 @@ impl Config {
                         .to_str()
                         .context("Could not parse the config path to string.")?
                         .to_string(),
+                );
+                vars.insert(
+                    "SELF_ROOT".to_string(),
+                    vars.get("SELF_PARENT").expect("just set").clone(),
                 );
                 vars.insert(
                     "SELF_NAME".to_string(),

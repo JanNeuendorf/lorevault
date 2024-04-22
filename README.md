@@ -66,6 +66,7 @@ They can not be used inside hashes, tags or types.
 If the config file is read from a git-repo, the variables 
 `SELF_REPO` and `SELF_COMMIT` are set automatically.
 This allows references to files from the same commit. If it is a local file, `SELF_PARENT` is set.
+`SELF_ROOT` gives either `repo#commit:` or the parent folder.
 
 ### Including Configs
 We can include other configuration files. 
