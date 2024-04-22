@@ -70,6 +70,14 @@ path = "path/in/repo"
 Other supported sources are text, URLs, files in archives and Borg backups.
 Folders and symbolic links are not supported. 
 
+When using an inline table, we can use the following notation
+```toml
+[[file]]
+path = "subfolder/my_file"
+sources=["local/path","repo#commit:path"]
+```
+The strings are then parsed into other sources.
+
 ### Tags
 Tags can be specified for conditional inclusion of files.
 

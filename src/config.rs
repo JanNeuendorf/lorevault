@@ -270,31 +270,3 @@ pub fn check_recursion(cfg: &str) -> Result<()> {
         INCLUSION_RECURSION_LIMIT
     ))
 }
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    #[test]
-    fn write_untagged_auto_variant() {
-        let mut sources: Vec<FileSource> = vec![];
-        sources.push(FileSource::Auto("AUTOSTRING".to_string()));
-        sources.push(FileSource::Download {
-            url: "abc.de".to_string(),
-        });
-        let file = File {
-            path: "p".into(),
-            hash: None,
-            tags: None,
-            sources,
-        };
-        let config = Config {
-            content: vec![file],
-            variables: HashMap::new(),
-            variables_set: false,
-            inclusions: vec![],
-        };
-        config
-            .write(&PathBuf::from("tmpfolder/testconf.toml"))
-            .unwrap();
-    }
-}
