@@ -1,4 +1,4 @@
-use self::cli::source_from_string;
+use self::cli::source_from_string_simple;
 use crate::*;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
@@ -94,7 +94,7 @@ impl Config {
     }
 
     pub fn from_general_path(general_path: &str) -> Result<Self> {
-        let source = cli::source_from_string(general_path)?;
+        let source = cli::source_from_string_simple(general_path)?;
         Self::from_filesource(&source)
     }
     #[allow(unused)]
@@ -225,7 +225,7 @@ pub struct Inclusion {
 }
 impl Inclusion {
     pub fn get_files(&self) -> Result<Vec<File>> {
-        let config_source = source_from_string(&self.config)?;
+        let config_source = source_from_string_simple(&self.config)?;
         let config = Config::from_filesource(&config_source)?;
         let mut files: Vec<File> = vec![];
         for original_file in config.get_active(&self.with_tags)? {
@@ -269,4 +269,32 @@ pub fn check_recursion(cfg: &str) -> Result<()> {
         "The inclusions are too deep (max depth={}) or recursive.",
         INCLUSION_RECURSION_LIMIT
     ))
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    #[test]
+    fn write_untagged_auto_variant() {
+        let mut sources: Vec<FileSource> = vec![];
+        sources.push(FileSource::Auto("AUTOSTRING".to_string()));
+        sources.push(FileSource::Download {
+            url: "abc.de".to_string(),
+        });
+        let file = File {
+            path: "p".into(),
+            hash: None,
+            tags: None,
+            sources,
+        };
+        let config = Config {
+            content: vec![file],
+            variables: HashMap::new(),
+            variables_set: false,
+            inclusions: vec![],
+        };
+        config
+            .write(&PathBuf::from("tmpfolder/testconf.toml"))
+            .unwrap();
+    }
 }

@@ -59,6 +59,7 @@ impl VariableCompletion for PathBuf {
 impl VariableCompletion for FileSource {
     fn required_variables(&self) -> Result<Vec<String>> {
         match self {
+            FileSource::Auto(s) => s.required_variables(),
             FileSource::Archive { archive, path } => {
                 let rb_archive = archive.to_owned().required_variables()?;
                 let rb_path = path.to_owned().required_variables()?;
@@ -96,6 +97,7 @@ impl VariableCompletion for FileSource {
     }
     fn set_single_variable(&mut self, key: &str, value: &str) -> Result<FileSource> {
         *self = match self {
+            FileSource::Auto(s) => Self::Auto(s.set_single_variable(key, value)?),
             FileSource::Archive { archive, path } => FileSource::Archive {
                 archive: archive.set_single_variable(key, value)?,
                 path: path.set_single_variable(key, value)?,

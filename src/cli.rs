@@ -65,7 +65,7 @@ fn extract_components(s: &str) -> Option<(String, String, String)> {
     }
 }
 
-pub fn source_from_string(general_path: &str) -> Result<sources::FileSource> {
+pub fn source_from_string_simple(general_path: &str) -> Result<sources::FileSource> {
     if is_repo(general_path) {
         match extract_components(general_path) {
             Some((repo, commit, path)) => Ok(sources::FileSource::Git {

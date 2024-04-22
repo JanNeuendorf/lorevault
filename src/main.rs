@@ -5,7 +5,7 @@ mod sources;
 mod variables;
 use anyhow::{format_err, Context, Error, Result};
 use clap::Parser;
-use cli::{get_confirmation, Cli, Commands};
+use cli::{get_confirmation, source_from_string_simple, Cli, Commands};
 use colored::*;
 use config::{check_recursion, Config, File};
 use memfolder::MemFolder;

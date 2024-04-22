@@ -37,10 +37,13 @@ pub enum FileSource {
         backup_id: String,
         path: PathBuf,
     },
+    #[serde(untagged)]
+    Auto(String),
 }
 impl FileSource {
     pub fn fetch(&self) -> Result<Vec<u8>> {
         match self {
+            FileSource::Auto(auto) => parse_auto_source(auto)?.fetch(),
             FileSource::Local { path } => {
                 if path.is_relative() {
                     return Err(format_err!(
@@ -240,6 +243,10 @@ fn strip_first_level(s: &str) -> String {
     } else {
         s.to_string()
     }
+}
+
+fn parse_auto_source(auto: &str) -> Result<FileSource> {
+    source_from_string_simple(auto)
 }
 
 fn read_from_borg(
