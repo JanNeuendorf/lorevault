@@ -76,7 +76,7 @@ When using an inline table, we can use the following notation
 path = "subfolder/my_file"
 sources=["local/path","repo#commit:path"]
 ```
-The strings are then parsed into other sources.
+The strings are then parsed into other sources. Currently, only local files and git-repos are supported.
 
 ### Tags
 Tags can be specified for conditional inclusion of files.
@@ -127,7 +127,8 @@ Variables are not shared between files. Tags for included files can only be acti
 ### Limitations
 
 - The contents of the folder are created in memory, so very large files are to be avoided.
-- Every file must be named explicitly. There is no support for including folders. 
+- Every file must be named explicitly. There is no support for including folders.
+- There is no control over the files metadata/permissions.
 
 
 
