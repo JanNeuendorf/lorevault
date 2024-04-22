@@ -38,17 +38,20 @@ impl MemFolder {
             if out_path.is_dir() {
                 fs::remove_dir_all(&out_path)?;
             } else {
-                return Err(Error::msg("out file exists, but is not a directory"));
+                return Err(format_err!(
+                    "Path {} exists, but it is not a directory.",
+                    out_path.to_string_lossy()
+                ));
             }
         }
 
         for (subpath, content) in &self.0 {
             let mut target_path = out_path.clone();
             target_path.push(subpath);
-            let prefix = target_path.parent().context("malformed path")?;
+            let prefix = target_path.parent().context("Malformed path")?;
             fs::create_dir_all(prefix).context("Path could not be created")?;
             let mut _file = std::fs::File::create(&target_path)?;
-            fs::write(target_path, content).context("could not write to file")?;
+            fs::write(target_path, content).context("Could not write file")?;
         }
         Ok(())
     }
@@ -91,11 +94,11 @@ fn get_full_paths_in_folder(folder_path: &PathBuf) -> Result<Vec<PathBuf>> {
         } else if file_type.is_dir() {
             let dir_files = get_full_paths_in_folder(&entry.path())?;
             if dir_files.is_empty() {
-                return Err(Error::msg("empty folders not supported"));
+                return Err(Error::msg("Empty folders not supported."));
             }
             files.extend(dir_files);
         } else {
-            return Err(Error::msg("only regular files supported"));
+            return Err(Error::msg("Only regular files are supported."));
         }
     }
 

@@ -73,7 +73,10 @@ pub fn source_from_string(general_path: &str) -> Result<sources::FileSource> {
                 commit: commit.into(),
                 path: path.into(),
             }),
-            None => Err(format_err!("could not parse repo string")),
+            None => Err(format_err!(format!(
+                "Could not parse repo string {}",
+                general_path
+            ))),
         }
     } else {
         Ok(sources::FileSource::Local {

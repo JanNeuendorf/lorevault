@@ -3,7 +3,7 @@ use crate::*;
 use git2::{Oid, Repository};
 use serde::{Deserialize, Serialize};
 use sha3::{Digest, Sha3_256};
-use std::process::Command;
+use std::{fmt::format, process::Command};
 use tar::Archive;
 use tempfile::TempDir;
 use xz2::read::XzDecoder;
@@ -43,9 +43,15 @@ impl FileSource {
         match self {
             FileSource::Local { path } => {
                 if path.is_relative() {
-                    return Err(format_err!("Relative paths are not allowed!"));
+                    return Err(format_err!(
+                        "Relative paths are not allowed: {}",
+                        path.to_string_lossy()
+                    ));
                 }
-                fs::read(path).context("could not read local file")
+                fs::read(path).context(format!(
+                    "Could not read local file {}",
+                    path.to_string_lossy()
+                ))
             }
             FileSource::Download { url } => {
                 let response = reqwest::blocking::get(url)?;
@@ -60,7 +66,10 @@ impl FileSource {
                 path,
             } => read_from_borg(archive, backup_id, path),
             FileSource::Archive { archive, path } => {
-                let filename = archive.file_name().context("no ending")?.to_string_lossy();
+                let filename = archive
+                    .file_name()
+                    .context("Archives need endings (.zip,..)")?
+                    .to_string_lossy();
                 if filename.ends_with(".zip") {
                     extract_file_from_zip(archive, path)
                 } else if filename.ends_with(".tar") {
@@ -68,7 +77,10 @@ impl FileSource {
                 } else if filename.ends_with(".tar.xz") {
                     extract_file_from_xz_tar(archive, path)
                 } else {
-                    Err(format_err!("Unsupported archive type (ending)"))
+                    Err(format_err!(
+                        "Unsupported archive type: {}",
+                        archive.to_string_lossy()
+                    ))
                 }
             }
         }
@@ -94,7 +106,7 @@ pub fn fetch_first_valid(sources: &Vec<FileSource>, hash: &Option<String>) -> Re
             println!("{}", warn.red());
         }
     }
-    return Err(format_err!("No valid source in list"));
+    return Err(format_err!("No valid source in list."));
 }
 
 pub fn compute_hash(content: &Vec<u8>) -> String {
@@ -123,7 +135,11 @@ fn get_git_file(commit_hash: &str, file_path: &PathBuf, repo_path: &str) -> Resu
     if let Some(blob) = blob.as_blob() {
         Ok(blob.content().to_vec())
     } else {
-        Err(format_err!("Git object is not a blob"))
+        Err(format_err!(
+            "Git object is not a blob {}:{}",
+            repo_path,
+            file_path.to_string_lossy()
+        ))
     }
 }
 
@@ -168,7 +184,7 @@ fn extract_file_from_zip(path_to_zip: &PathBuf, sub_path: &PathBuf) -> Result<Ve
     }
 
     Err(format_err!(
-        "file {} not found in {}",
+        "File {} not found in {}",
         sub_path.to_string_lossy(),
         path_to_zip.to_string_lossy()
     ))
@@ -206,7 +222,10 @@ fn extract_file_from_tar_data(buf: &Vec<u8>, file_path: &PathBuf) -> Result<Vec<
         }
     }
 
-    Err(format_err!("Path not found in tar data"))
+    Err(format_err!(
+        "Path {} not found in tar-file.",
+        file_path.to_string_lossy()
+    ))
 }
 
 fn strip_first_level(s: &str) -> String {
@@ -230,21 +249,27 @@ fn read_from_borg(
 ) -> Result<Vec<u8>> {
     let borg_exists = Command::new("borg").arg("-V").output()?.status.success();
     if !borg_exists {
-        return Err(format_err!("borg might not be installed"));
+        return Err(format_err!("Borg might not be installed!"));
     }
     let backup = &format!(
         "{}::{}",
-        archive_path.to_str().context("path not printable")?,
+        archive_path
+            .to_str()
+            .context("Path not printable for Borg command.")?,
         backup_name
     );
     let output = Command::new("borg")
         .arg("extract")
         .arg(backup)
-        .arg(sub_path.to_str().context("subpath not printable")?)
+        .arg(
+            sub_path
+                .to_str()
+                .context("Subpath not printable for Borg command.")?,
+        )
         .arg("--stdout")
         .output()?;
     if !output.status.success() {
-        return Err(format_err!("Call to borg failed"));
+        return Err(format_err!("Call to Borg failed."));
     }
     return Ok(output.stdout);
 }
