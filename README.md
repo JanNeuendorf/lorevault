@@ -78,7 +78,7 @@ required_tags=["tag1"] # If not set, the file will not be included.
 with_tags=["tag2"] # Will be passed to the other file.
 
 ```
-
+Variables are not shared between files. Tags for included files can only be activated in the way shown above and are not influenced by the tags activated for the including file. 
 
 ### CLI
 
