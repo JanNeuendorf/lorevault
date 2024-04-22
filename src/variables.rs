@@ -9,7 +9,9 @@ pub trait VariableCompletion: Sized + Clone {
         let requested = self.required_variables()?;
         let mut new = self.clone();
         for key in &requested {
-            let value = map.get(key).context("Required key not in variables")?;
+            let value = map
+                .get(key)
+                .context(format!("Required key: {} is not in variables", key))?;
             new.set_single_variable(key, value)?;
         }
         Ok(new)

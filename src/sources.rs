@@ -13,7 +13,7 @@ use zip::read::ZipArchive;
 #[serde(tag = "type")]
 #[serde(deny_unknown_fields)]
 pub enum FileSource {
-    #[serde(rename = "file")]
+    #[serde(rename = "file", alias = "local")]
     Local { path: PathBuf },
     #[serde(rename = "http", alias = "url")]
     Download { url: String },

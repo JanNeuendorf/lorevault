@@ -61,10 +61,11 @@ type = "text"
 content = "This file was written by {{author}}."
 ignore_variables=false # This is the default. If true, the text is protected.
 ```
-They can not be used inside hashes, tags or types. 
+They can not be used inside hashes, tags or types.
+
 If the config file is read from a git-repo, the variables 
 `SELF_REPO` and `SELF_COMMIT` are set automatically.
-This allows references to files from the same commit.  
+This allows references to files from the same commit. If it is a local file, `SELF_PARENT` is set.
 
 
 ### CLI

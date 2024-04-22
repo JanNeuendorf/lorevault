@@ -10,7 +10,7 @@
 
 # To avoid repetition, variables can be defined.
 var.author="your name"
-# If the file is in a repo, SELF_REPO and SELF_COMMIT are set.
+# See the README for predefined variables.
 
 [[file]]
 # This is the relative path of the file in the folder. The parent folder is created automatically.

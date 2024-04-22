@@ -106,6 +106,16 @@ impl Config {
                 vars.insert("SELF_COMMIT".to_string(), commit.to_string());
                 vars.insert("SELF_REPO".to_string(), repo.to_string());
             }
+            Ok(FileSource::Local { path }) => {
+                vars.insert(
+                    "SELF_PARENT".to_string(),
+                    path.parent()
+                        .context("A local config must have a parent dir.")?
+                        .to_str()
+                        .context("Could not parse the config path to string.")?
+                        .to_string(),
+                );
+            }
             _ => {}
         }
 
