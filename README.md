@@ -1,10 +1,45 @@
-Lorevault is a simple program that creates a folder from a declarative configuration file. 
+Lorevault is a simple program that creates a folder from a declarative configuration file.
+### Motivation                                                                                               
+>When I ran that test ten minutes ago, did I forget to to delete the old log files? Is that why it failed?
+>
+> -- Me, every five minutes
+
+The main motivation for this project is to define folders in a way that can be made completely reproducible. 
+This, of course, could also be done by copying a reference folder or cloning a git-repo. 
+There are a few problems with this
+- You might want to do this after every step of your script, just to make sure nothing changed. This can be costly.
+- This gives you no record of what was in this folder.
+- Changes to your reference folder are dangerous. Unless you always store it next to your project, you might lose it.
+- You might want to test/build with a slightly different folder, forcing you to make and undo changes carefully.
+
+To combat those problems, we can use 
+
+- Hashes to make sure the files are unchanged.
+- Support for version control (*git*).
+- Multiple sources for a single file to make sure at least one keeps working.
+- Tags to conditionally include or change files.
+
+While you can be pedantic, you do not have to be, so you can use this for simple templates as well.
+
 
 ### Installation
 You can install lorevault using Cargo.
 ```bash
 cargo install --git https://github.com/JanNeuendorf/lorevault
 ```
+
+### CLI
+
+The command:
+```sh
+lorevault config.toml targetfolder -t customtag
+```
+creates the folder according to the recipe. 
+If the folder already exists, it is restored to the prescribed state with minimal work.
+
+Other subcommands are `check`, to see which sources are valid, `example` to write out a configuration file, `tags` to list the available tags, and `hash` to get the SHA3-256 of a file.
+
+The configuration file can be read in from a local or remote git-repo with the syntax `repo#commit:path`.
 
 ### Config File
 The config file is a `.toml` file that consists of a list of file descriptions. 
@@ -80,22 +115,11 @@ with_tags=["tag2"] # Will be passed to the other file.
 ```
 Variables are not shared between files. Tags for included files can only be activated in the way shown above and are not influenced by the tags activated for the including file. 
 
-### CLI
-
-The command:
-```sh
-lorevault sync config.toml my_folder -t customtag
-```
-creates the folder according to the recipe. 
-If the folder already exists, it is restored to the prescribed state with minimal work.
-
-Other subcommands are `check`, to see which sources are valid, `example` to write out a configuration file, `tags` to list the available tags, and `hash` to get the SHA3-256 of a file.
-
-The configuration file can be read in from a local or remote git-repo with the syntax `repo#commit:path`.
 
 ### Limitations
 
-The contents of the folder are created in memory, so very large files are to be avoided. 
+- The contents of the folder are created in memory, so very large files are to be avoided.
+- Every file must be named explicitly. There is no support for including folders. 
 
 
 
