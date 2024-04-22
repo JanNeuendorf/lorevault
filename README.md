@@ -128,7 +128,7 @@ Variables are not shared between files. Tags for included files can only be acti
 
 - The contents of the folder are created in memory, so very large files are to be avoided.
 - Every file must be named explicitly. There is no support for including folders.
-- There is no control over the files metadata/permissions.
+- There is no control over metadata/permissions.
 
 
 
