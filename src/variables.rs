@@ -2,6 +2,8 @@ use crate::*;
 use regex::Regex;
 use std::collections::HashSet;
 
+use self::config::Inclusion;
+
 pub trait VariableCompletion: Sized + Clone {
     fn required_variables(&self) -> Result<Vec<String>>;
     fn set_single_variable(&mut self, key: &str, value: &str) -> Result<Self>;
@@ -184,6 +186,22 @@ pub fn vecset<T: Clone + Eq + std::hash::Hash>(vecs: Vec<Vec<T>>) -> Vec<T> {
         }
     }
     union_set.into_iter().collect()
+}
+
+impl VariableCompletion for Inclusion {
+    fn required_variables(&self) -> Result<Vec<String>> {
+        let rb_subfolder = self.subfolder.required_variables()?;
+        let rb_config = self.config.required_variables()?;
+        Ok(vecset(vec![rb_subfolder, rb_config]))
+    }
+    fn set_single_variable(&mut self, key: &str, value: &str) -> Result<Self> {
+        Ok(Self {
+            config: self.config.set_single_variable(key, value)?,
+            subfolder: self.subfolder.set_single_variable(key, value)?,
+            tags: self.tags.clone(),
+            with_tags: self.with_tags.clone(),
+        })
+    }
 }
 
 #[cfg(test)]

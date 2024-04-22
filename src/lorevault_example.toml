@@ -12,6 +12,13 @@
 var.author="your name"
 # See the README for predefined variables.
 
+# We can include other config files.
+[[include]]
+config="included.toml" # Can be repo#commit:path
+subfolder="files/go/here" # Defaults to folder root
+required_tags=["tag1"] # If not set, the file will not be included.
+with_tags=["tag2"] # Will be passed to the other file.
+
 [[file]]
 # This is the relative path of the file in the folder. The parent folder is created automatically.
 path = "subfolder/my_file"

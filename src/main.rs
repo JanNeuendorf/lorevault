@@ -7,7 +7,7 @@ use anyhow::{format_err, Context, Error, Result};
 use clap::Parser;
 use cli::{get_confirmation, Cli, Commands};
 use colored::*;
-use config::{Config, File};
+use config::{check_recursion, Config, File};
 use memfolder::MemFolder;
 use sources::{compute_hash, fetch_first_valid, FileSource};
 use std::{
@@ -47,6 +47,7 @@ fn sync_folder(
     tags: &Vec<String>,
     no_confirm: bool,
 ) -> Result<()> {
+    check_recursion(config_path)?;
     let conf = Config::from_general_path(config_path)?;
     let reference = MemFolder::load_from_folder(output).unwrap_or(MemFolder::empty());
     let memfolder = MemFolder::load_first_valid_with_ref(&conf, tags, &reference)?;
@@ -60,10 +61,11 @@ fn sync_folder(
 }
 
 fn check(config_path: &str) -> Result<()> {
+    check_recursion(config_path)?;
     let conf = Config::from_general_path(config_path)?;
-    let number_of_sources = conf.get_all().iter().map(|f| &f.sources).flatten().count();
+    let number_of_sources = conf.get_all()?.iter().map(|f| &f.sources).flatten().count();
     let mut source_counter = 0;
-    for file in conf.get_all() {
+    for file in conf.get_all()? {
         if file.hash.is_none() {
             let warning = format!(
                 "No hash for {}",
@@ -147,6 +149,7 @@ fn print_hash(path: &str) -> Result<()> {
     Ok(())
 }
 fn print_tags(configpath: &str) -> Result<()> {
+    check_recursion(configpath)?;
     let config = Config::from_general_path(configpath)?;
     for tag in &config.tags() {
         println!("- {}", tag);

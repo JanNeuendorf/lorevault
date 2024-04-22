@@ -3,7 +3,7 @@ use crate::*;
 use git2::{Oid, Repository};
 use serde::{Deserialize, Serialize};
 use sha3::{Digest, Sha3_256};
-use std::{fmt::format, process::Command};
+use std::process::Command;
 use tar::Archive;
 use tempfile::TempDir;
 use xz2::read::XzDecoder;

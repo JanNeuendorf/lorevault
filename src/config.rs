@@ -1,6 +1,8 @@
+use self::cli::source_from_string;
 use crate::*;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
+const INCLUSION_RECURSION_LIMIT: usize = 10;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde_as]
@@ -13,20 +15,17 @@ pub struct Config {
     variables: HashMap<String, String>,
     #[serde(rename = "file", alias = "files")]
     content: Vec<File>,
+    #[serde(default)]
+    #[serde(alias = "include")]
+    inclusions: Vec<Inclusion>,
 }
 
 impl Config {
-    #[allow(unused)]
-    pub fn new(files: Vec<File>, variables: HashMap<String, String>) -> Self {
-        return Self {
-            content: files,
-            variables,
-            variables_set: false,
-        };
-    }
     pub fn get_active(&self, tags: &Vec<String>) -> Result<Vec<File>> {
         if !self.variables_set {
-            return Err(format_err!("Variables must have been set to get file list"));
+            return Err(format_err!(
+                "Variables and inclusions must have been set to get file list"
+            ));
         }
         let defined_tags = self.tags();
         for requested_tag in tags {
@@ -61,15 +60,32 @@ impl Config {
             new_content.push(item.clone());
             paths.push(item.get_path().clone())
         }
+        for inc in &self.inclusions {
+            let files_to_include = inc.get_files()?;
+            for f2i in files_to_include {
+                if f2i.is_active(tags) {
+                    new_content.push(f2i);
+                }
+            }
+        }
+
         Ok(new_content)
     }
-    pub fn get_all(&self) -> Vec<File> {
-        self.content.clone()
+    pub fn get_all(&self) -> Result<Vec<File>> {
+        let mut new_content = self.content.clone();
+        for inc in &self.inclusions {
+            let files_to_include = inc.get_files()?;
+            for f2i in files_to_include {
+                new_content.push(f2i);
+            }
+        }
+        Ok(new_content)
     }
 
     fn from_filesource(source: &FileSource) -> Result<Self> {
         let data = match source {
-            FileSource::Local { path } => fs::read(path)?,
+            FileSource::Local { path } => fs::read(path)
+                .context(format!("Could not load config {}", path.to_string_lossy()))?,
             _ => source.fetch()?,
         };
         let toml_string = String::from_utf8(data)?;
@@ -101,9 +117,17 @@ impl Config {
 
         let mut vars = self.variables.clone();
         match source {
-            FileSource::Git { repo, commit, .. } => {
+            FileSource::Git { repo, commit, path } => {
                 vars.insert("SELF_COMMIT".to_string(), commit.to_string());
                 vars.insert("SELF_REPO".to_string(), repo.to_string());
+                vars.insert(
+                    "SELF_NAME".to_string(),
+                    path.file_name()
+                        .context("Config must have a name.")?
+                        .to_str()
+                        .context("Path must be printable")?
+                        .to_string(),
+                );
             }
             FileSource::Local { path } => {
                 vars.insert(
@@ -114,21 +138,34 @@ impl Config {
                         .context("Could not parse the config path to string.")?
                         .to_string(),
                 );
+                vars.insert(
+                    "SELF_NAME".to_string(),
+                    path.file_name()
+                        .context("Config must have a name.")?
+                        .to_str()
+                        .context("Path must be printable")?
+                        .to_string(),
+                );
             }
             _ => {}
         }
 
         new.content = new.content.set_variables(&vars)?;
+        new.inclusions = new.inclusions.set_variables(&vars)?;
         Ok(Self {
             variables: new.variables,
             variables_set: true,
             content: new.content,
+            inclusions: new.inclusions,
         })
     }
     pub fn tags(&self) -> Vec<String> {
         let mut taglists = vec![];
         for file in &self.content {
             taglists.push(file.tags.clone().unwrap_or(vec![]));
+        }
+        for inc in &self.inclusions {
+            taglists.push(inc.tags.clone().unwrap_or(vec![]));
         }
         vecset(taglists)
     }
@@ -138,6 +175,7 @@ impl Config {
 #[serde(deny_unknown_fields)]
 pub struct File {
     pub path: PathBuf,
+    #[serde(alias = "required_tags")]
     pub tags: Option<Vec<String>>,
     pub hash: Option<String>,
     #[serde(rename = "source")]
@@ -167,4 +205,63 @@ impl File {
         }
         false
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct Inclusion {
+    pub config: String,
+    #[serde(alias = "required_tags")]
+    pub tags: Option<Vec<String>>,
+    #[serde(default)]
+    pub with_tags: Vec<String>,
+    #[serde(default, alias = "path")]
+    pub subfolder: PathBuf,
+}
+impl Inclusion {
+    pub fn get_files(&self) -> Result<Vec<File>> {
+        let config_source = source_from_string(&self.config)?;
+        let config = Config::from_filesource(&config_source)?;
+        let mut files: Vec<File> = vec![];
+        for original_file in config.get_active(&self.with_tags)? {
+            files.push(File {
+                path: self.subfolder.join(original_file.path),
+                tags: self.tags.clone(),
+                hash: original_file.hash,
+                sources: original_file.sources,
+            })
+        }
+
+        Ok(files)
+    }
+}
+
+fn get_next_inclusion_level(cfgs: &Vec<String>) -> Result<Vec<String>> {
+    let mut tmp = vec![];
+
+    for cfg in cfgs {
+        tmp.push(
+            Config::from_general_path(cfg)?
+                .inclusions
+                .iter()
+                .map(|inc| inc.config.to_string())
+                .collect::<Vec<String>>(),
+        );
+    }
+    Ok(vecset(tmp))
+}
+
+pub fn check_recursion(cfg: &str) -> Result<()> {
+    let mut next_deps = vec![cfg.to_string()];
+    for _ in 0..INCLUSION_RECURSION_LIMIT {
+        next_deps = get_next_inclusion_level(&next_deps)?;
+        if next_deps.len() == 0 {
+            return Ok(());
+        }
+    }
+
+    Err(format_err!(
+        "The inclusions are too deep (max depth={}) or recursive.",
+        INCLUSION_RECURSION_LIMIT
+    ))
 }

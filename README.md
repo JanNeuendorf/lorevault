@@ -67,6 +67,17 @@ If the config file is read from a git-repo, the variables
 `SELF_REPO` and `SELF_COMMIT` are set automatically.
 This allows references to files from the same commit. If it is a local file, `SELF_PARENT` is set.
 
+### Including Configs
+We can include other configuration files. 
+```toml
+[[include]]
+config="included.toml" # Can be repo#commit:path
+subfolder="files/go/here" # Defaults to folder root.
+required_tags=["tag1"] # If not set, the file will not be included.
+with_tags=["tag2"] # Will be passed to the other file.
+
+```
+
 
 ### CLI
 
