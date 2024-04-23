@@ -21,13 +21,16 @@ build: test
     cargo build --release --target=x86_64-unknown-linux-musl --features=static
 
 
-test1:test_clean
+test1:test_clean # This test requires connection to GitHub
+    {{test_prefix}} check testing/testconfig1.toml 
+    {{test_prefix}} sync testing/testconfig1.toml tmpfolder --no-confirm    
     {{test_prefix}} sync testing/testconfig1.toml tmpfolder --no-confirm
     {{exists}} tmpfolder/description.txt|echo
     {{exists}} tmpfolder/rustlings_readme.md
     just count_folder tmpfolder 3
     just count_folder tmpfolder/subfolder 2
     {{test_prefix}} sync testing/testconfig1.toml tmpfolder --no-confirm -t file2
+    #This will show the expected error message.
     just test_fails "{{test_prefix}} sync testing/testconfig1.toml tmpfolder --no-confirm -t wrongtag"
     just count_folder tmpfolder 3
     just count_folder tmpfolder/subfolder 3
