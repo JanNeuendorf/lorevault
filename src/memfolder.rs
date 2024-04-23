@@ -48,10 +48,7 @@ impl MemFolder {
         for (subpath, content) in &self.0 {
             let mut target_path = out_path.clone();
 
-            let subpath = match subpath.strip_prefix("/") {
-                Ok(stripped_path) => stripped_path.to_path_buf(),
-                _ => subpath.to_path_buf(),
-            };
+            let subpath = format_subpath(subpath);
             target_path.push(subpath);
             let prefix = target_path.parent().context("Malformed path")?;
             fs::create_dir_all(prefix).context("Path could not be created")?;

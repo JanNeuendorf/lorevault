@@ -30,7 +30,6 @@ test1:test_clean # This test requires connection to GitHub
     just count_folder tmpfolder 3
     just count_folder tmpfolder/subfolder 2
     {{test_prefix}} sync testing/testconfig1.toml tmpfolder --no-confirm -t file2
-    #This will show the expected error message.
     just test_fails "{{test_prefix}} sync testing/testconfig1.toml tmpfolder --no-confirm -t wrongtag"
     just count_folder tmpfolder 3
     just count_folder tmpfolder/subfolder 3
@@ -54,6 +53,6 @@ count_folder folder expected:
 test_fails command:
     #!/usr/bin/env python3
     import os
-    assert(os.system("{{command}}")!=0)
+    assert(os.system("{{command}}> /dev/null 2>&1")!=0)
 
 
