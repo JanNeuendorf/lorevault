@@ -1,6 +1,6 @@
 [package]
 name = "lorevault"
-version = "0.6.2"
+version = "0.6.3"
 edition = "2021"
 authors = ["Jan Neuendorf"]
 description = "A simple program to create a folder from a recipe."
@@ -12,6 +12,7 @@ clap = { version = "4.5.4", features = ["derive"] }
 colored = "2.1.0"
 dialoguer = "0.11.0"
 git2 = "0.18.3"
+openssl = { version = "0.10.64", features = ["vendored"],optional = true }
 regex = "1.10.4"
 reqwest = { version = "0.12.2", features = ["blocking", "json"] }
 serde = { version = "1.0.197", features = ["derive"] }
@@ -22,3 +23,11 @@ tempfile = "3.10.1"
 toml = "0.8.12"
 xz2 = "0.1.7"
 zip = "0.6.6"
+
+[profile.release]
+opt-level = 3
+strip = true 
+lto = true
+
+[features]
+static = ["openssl"]
