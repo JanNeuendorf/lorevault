@@ -76,7 +76,7 @@ When using an inline table, we can use the following notation
 path = "subfolder/my_file"
 sources=["/some/path","repo#commit:path","/path/to/archive.tar:file]
 ```
-The strings are then parsed into other sources. Currently, only local files and git-repos are supported.
+The strings are then parsed into other sources. Only local files, archives and git-repos are supported.
 
 ### Tags
 Tags can be specified for conditional inclusion of files.
