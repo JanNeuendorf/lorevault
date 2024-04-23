@@ -57,6 +57,12 @@ impl FileSource {
             FileSource::Git { repo, commit, path } => get_git_file(commit, path, repo),
             FileSource::Text { content, .. } => Ok(content.clone().into_bytes()),
             FileSource::Archive { archive, path } => {
+                if path.is_relative() {
+                    return Err(format_err!(
+                        "Relative paths to archives are not allowed: {}",
+                        path.to_string_lossy()
+                    ));
+                }
                 let filename = archive
                     .file_name()
                     .context("Archives need endings (.zip,..)")?
@@ -139,6 +145,10 @@ fn get_git_repo(repo_path: &str) -> Result<Repository> {
     if is_url(repo_path) {
         repo = clone_repository(repo_path)?;
     } else {
+        if PathBuf::from(repo_path).is_relative() {
+            return Err(format_err!("Relative paths are not allowed: {}", repo_path));
+        }
+
         repo = Repository::open(repo_path)?;
     }
     Ok(repo)
@@ -234,5 +244,38 @@ fn strip_first_level(s: &str) -> String {
 }
 
 fn parse_auto_source(auto: &str) -> Result<FileSource> {
+    if auto.chars().filter(|&c| c == ':').count() == 1
+        && !auto.contains("#")
+        && (auto.contains(".tar") || auto.contains(".zip") || auto.contains(".tar.xz"))
+    {
+        let (a, p) = auto.split_once(":").expect("just checked : count");
+        return Ok(FileSource::Archive {
+            archive: PathBuf::from(a),
+            path: PathBuf::from(p),
+        });
+    }
     source_from_string_simple(auto)
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    #[test]
+    fn test_parse_auto_sources() {
+        assert_eq!(
+            parse_auto_source("path/to/archive.tar:path/in/archive").unwrap(),
+            FileSource::Archive {
+                archive: PathBuf::from("path/to/archive.tar"),
+                path: PathBuf::from("path/in/archive")
+            }
+        );
+        assert_eq!(
+            parse_auto_source("repo#eaf33129cdee0501af69c04c8d4068c5bf6cbfe1:path").unwrap(),
+            FileSource::Git {
+                repo: "repo".to_string(),
+                commit: "eaf33129cdee0501af69c04c8d4068c5bf6cbfe1".to_string(),
+                path: PathBuf::from("path")
+            }
+        );
+    }
 }

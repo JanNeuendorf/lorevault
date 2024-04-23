@@ -74,7 +74,7 @@ When using an inline table, we can use the following notation
 ```toml
 [[file]]
 path = "subfolder/my_file"
-sources=["local/path","repo#commit:path"]
+sources=["/some/path","repo#commit:path","/path/to/archive.tar:file]
 ```
 The strings are then parsed into other sources. Currently, only local files and git-repos are supported.
 
