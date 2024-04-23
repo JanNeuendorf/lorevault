@@ -1,4 +1,4 @@
-use self::cli::source_from_string_simple;
+use self::{cli::source_from_string_simple, sources::is_url};
 use crate::*;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
@@ -13,7 +13,7 @@ pub struct Config {
     variables_set: bool,
     #[serde(default, alias = "var")]
     variables: HashMap<String, String>,
-    #[serde(rename = "file", alias = "files")]
+    #[serde(rename = "file", alias = "files", default)]
     content: Vec<File>,
     #[serde(default)]
     #[serde(alias = "include")]
@@ -65,6 +65,7 @@ impl Config {
             for f2i in files_to_include {
                 if f2i.is_active(tags) {
                     if paths.contains(&f2i.path) {
+                        //println!("inc: {:?} file: {:?}",&inc,&f2i);
                         return Err(format_err!(
                             "There are two files for path {}",
                             &f2i.get_path().to_string_lossy()
@@ -135,13 +136,27 @@ impl Config {
                         .context("Path must be printable")?
                         .to_string(),
                 );
-                vars.insert("SELF_ROOT".to_string(), format!("{}#{}:", repo, commit));
+                let repostring = if is_url(&repo) {
+                    repo.to_string()
+                } else {
+                    let repopath = PathBuf::from(repo).canonicalize()?;
+                    repopath
+                        .to_str()
+                        .context("Could not print repo path")?
+                        .to_string()
+                };
+
+                vars.insert(
+                    "SELF_ROOT".to_string(),
+                    format!("{}#{}:", repostring, commit),
+                );
             }
             FileSource::Local { path } => {
                 vars.insert(
                     "SELF_PARENT".to_string(),
                     path.parent()
                         .context("A local config must have a parent dir.")?
+                        .canonicalize()?
                         .to_str()
                         .context("Could not parse the config path to string.")?
                         .to_string(),
@@ -190,7 +205,7 @@ pub struct File {
     #[serde(alias = "required_tags")]
     pub tags: Option<Vec<String>>,
     pub hash: Option<String>,
-    #[serde(rename = "source")]
+    #[serde(alias = "source")]
     pub sources: Vec<FileSource>,
 }
 
@@ -237,7 +252,7 @@ impl Inclusion {
         let mut files: Vec<File> = vec![];
         for original_file in config.get_active(&self.with_tags)? {
             files.push(File {
-                path: self.subfolder.join(original_file.path),
+                path: self.subfolder.join(format_subpath(&original_file.path)),
                 tags: self.tags.clone(),
                 hash: original_file.hash,
                 sources: original_file.sources,

@@ -1,0 +1,6 @@
+var.local_var="included"
+[[file]]
+tags=["main"]
+path="/{{local_var}}/main.rs"
+sources=["{{SELF_ROOT}}/../src/main.rs"]
+

@@ -57,7 +57,7 @@ impl FileSource {
             FileSource::Git { repo, commit, path } => get_git_file(commit, path, repo),
             FileSource::Text { content, .. } => Ok(content.clone().into_bytes()),
             FileSource::Archive { archive, path } => {
-                if path.is_relative() {
+                if archive.is_relative() {
                     return Err(format_err!(
                         "Relative paths to archives are not allowed: {}",
                         path.to_string_lossy()
@@ -96,10 +96,17 @@ pub fn fetch_first_valid(sources: &Vec<FileSource>, hash: &Option<String>) -> Re
                     == &compute_hash(&result.as_ref().expect("ref must exist"))
                 {
                     return result;
+                } else {
+                    let warn = format!("Invalid hash {:?}", &s);
+                    println!("{}", warn.red());
                 }
             }
         } else {
-            let warn = format!("Invalid source {:?}", &s);
+            let warn = format!(
+                "Invalid source {:?} \nError: {}",
+                &s,
+                result.err().expect("error branch")
+            );
             println!("{}", warn.red());
         }
     }
@@ -126,7 +133,7 @@ fn get_git_file(commit_hash: &str, file_path: &PathBuf, repo_path: &str) -> Resu
     let tree = commit.tree()?;
 
     let blob = tree
-        .get_path(&std::path::Path::new(file_path))?
+        .get_path(&std::path::Path::new(&format_subpath(file_path)))?
         .to_object(&repo)?;
 
     if let Some(blob) = blob.as_blob() {
@@ -154,7 +161,7 @@ fn get_git_repo(repo_path: &str) -> Result<Repository> {
     Ok(repo)
 }
 
-fn is_url(path: &str) -> bool {
+pub fn is_url(path: &str) -> bool {
     path.to_string().starts_with("http://") || path.to_string().starts_with("https://")
 }
 
@@ -176,8 +183,7 @@ fn extract_file_from_zip(path_to_zip: &PathBuf, sub_path: &PathBuf) -> Result<Ve
         let mut entry = zip.by_index(i)?;
 
         let entry_subpath = strip_first_level(entry.name());
-
-        if entry_subpath == sub_path.to_str().context("invalid path")? {
+        if entry_subpath == format_subpath(sub_path).to_str().context("invalid path")? {
             let mut content = Vec::new();
             entry.read_to_end(&mut content)?;
             return Ok(content);
@@ -216,7 +222,7 @@ fn extract_file_from_tar_data(buf: &Vec<u8>, file_path: &PathBuf) -> Result<Vec<
 
         let entry_path_str = entry_path.to_string_lossy();
 
-        if strip_first_level(&entry_path_str) == file_path.to_string_lossy() {
+        if strip_first_level(&entry_path_str) == format_subpath(file_path).to_string_lossy() {
             let mut content = Vec::new();
             entry.read_to_end(&mut content)?;
             return Ok(content);
@@ -240,6 +246,12 @@ fn strip_first_level(s: &str) -> String {
         return stripped_path;
     } else {
         s.to_string()
+    }
+}
+pub fn format_subpath(subpath: &PathBuf) -> PathBuf {
+    match subpath.strip_prefix("/") {
+        Ok(p) => p.to_path_buf(),
+        Err(_) => subpath.clone(),
     }
 }
 

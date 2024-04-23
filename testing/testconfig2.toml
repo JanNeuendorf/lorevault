@@ -1,0 +1,25 @@
+var.local_var="local"
+[[include]]
+config="{{SELF_ROOT}}/included1.toml"
+with_tags=[] #Should load no files
+subfolder="shouldnotexist"
+
+[[include]]
+config="{{SELF_ROOT}}/included1.toml"
+with_tags=["main"]
+
+[[include]]
+tags=["subfolder"]
+config="{{SELF_ROOT}}/included1.toml"
+subfolder="subfolder"
+with_tags=["main"]
+
+[[file]]
+path="{{local_var}}/other/main.rs"
+sources=["{{SELF_ROOT}}/../src/main.rs"]
+
+[[file]]
+tags=["conflict"] # this can not be active together with subfolder
+path="subfolder/included/main.rs"
+sources=["{{SELF_ROOT}}/../src/main.rs"]
+

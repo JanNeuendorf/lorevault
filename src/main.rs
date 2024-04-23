@@ -9,7 +9,7 @@ use cli::{get_confirmation, source_from_string_simple, Cli, Commands};
 use colored::*;
 use config::{check_recursion, Config, File};
 use memfolder::MemFolder;
-use sources::{compute_hash, fetch_first_valid, FileSource};
+use sources::{compute_hash, fetch_first_valid, format_subpath, FileSource};
 use std::{
     collections::HashMap,
     fs,
