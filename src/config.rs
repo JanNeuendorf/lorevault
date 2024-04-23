@@ -64,6 +64,13 @@ impl Config {
             let files_to_include = inc.get_files()?;
             for f2i in files_to_include {
                 if f2i.is_active(tags) {
+                    if paths.contains(&f2i.path) {
+                        return Err(format_err!(
+                            "There are two files for path {}",
+                            &f2i.get_path().to_string_lossy()
+                        ));
+                    }
+                    paths.push(f2i.path.clone());
                     new_content.push(f2i);
                 }
             }
