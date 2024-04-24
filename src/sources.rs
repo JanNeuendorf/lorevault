@@ -150,7 +150,13 @@ fn get_git_file(commit_hash: &str, file_path: &PathBuf, repo_path: &str) -> Resu
 fn get_git_repo(repo_path: &str) -> Result<Repository> {
     let repo: Repository;
     if is_url(repo_path) {
-        repo = clone_repository(repo_path)?;
+        repo = match fetch_repo_from_cache(repo_path) {
+            Ok(r) => r,
+            Err(_) => {
+                green(format!("Cloning {}", repo_path));
+                clone_repository(repo_path)?
+            }
+        };
     } else {
         if PathBuf::from(repo_path).is_relative() {
             return Err(format_err!("Relative paths are not allowed: {}", repo_path));
@@ -165,12 +171,58 @@ pub fn is_url(path: &str) -> bool {
     path.to_string().starts_with("http://") || path.to_string().starts_with("https://")
 }
 
+fn cache_name(url: impl AsRef<str>) -> PathBuf {
+    PathBuf::from(compute_hash(&url.as_ref().bytes().collect()))
+}
+
 fn clone_repository(repo_url: &str) -> Result<Repository> {
-    let temp_dir = TempDir::new()?;
+    if let Some(cachedir) = CACHEDIR.get() {
+        let repo_at_cache = git2::build::RepoBuilder::new().clone(
+            repo_url,
+            cachedir.path().join(cache_name(repo_url)).as_path(),
+        );
+        let repo = match repo_at_cache {
+            Ok(repo) => repo,
+            Err(_) => {
+                let temp_dir = TempDir::new()?;
+                yellow("Trying to write to existing cache directory");
+                git2::build::RepoBuilder::new().clone(repo_url, temp_dir.path())?
+            }
+        };
 
-    let repo = git2::build::RepoBuilder::new().clone(repo_url, temp_dir.path())?;
+        Ok(repo)
+    } else {
+        let temp_dir = TempDir::new()?;
+        yellow("Cloning without caching.");
 
-    Ok(repo)
+        let repo = git2::build::RepoBuilder::new().clone(repo_url, temp_dir.path())?;
+
+        Ok(repo)
+    }
+}
+
+fn get_remote_url(repo_path: &PathBuf) -> Result<String> {
+    let repo = Repository::open(repo_path)?;
+    let remote_name = "origin";
+    let remote = repo.find_remote(&remote_name)?;
+
+    if let Some(url) = remote.url() {
+        Ok(url.to_string())
+    } else {
+        Err(format_err!("Remote URL not found"))
+    }
+}
+
+fn fetch_repo_from_cache(url: &str) -> Result<Repository> {
+    let cachedir = CACHEDIR.get().context("No cache directory")?.path();
+    let path = cachedir.join(cache_name(url));
+
+    if let Ok(found_url) = get_remote_url(&path) {
+        if found_url == url {
+            return Ok(Repository::open(path)?);
+        }
+    }
+    Err(format_err!("Not found in cache {}", url))
 }
 
 fn extract_file_from_zip(path_to_zip: &PathBuf, sub_path: &PathBuf) -> Result<Vec<u8>> {

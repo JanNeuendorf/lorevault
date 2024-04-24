@@ -9,6 +9,7 @@ use cli::{get_confirmation, source_from_string_simple, Cli, Commands};
 use colored::*;
 use config::{check_recursion, Config, File};
 use memfolder::MemFolder;
+use once_cell::sync::OnceCell;
 use sources::{compute_hash, fetch_first_valid, format_subpath, FileSource};
 use std::{
     collections::HashMap,
@@ -17,10 +18,17 @@ use std::{
     path::PathBuf,
     process::exit,
 };
+use tempfile::TempDir;
 use variables::*;
+
+pub static CACHEDIR: OnceCell<TempDir> = OnceCell::new();
 
 fn main() {
     let cli = Cli::parse();
+    match init_cache_dir() {
+        Err(_) => yellow("Not using a cache directory."),
+        _ => {}
+    }
 
     let result = match &cli.command {
         Commands::Sync {
@@ -156,6 +164,29 @@ fn print_tags(configpath: &str) -> Result<()> {
     }
     Ok(())
 }
+
+fn init_cache_dir() -> Result<PathBuf> {
+    let tmpdir = TempDir::new()?;
+    let path = tmpdir.path().to_path_buf();
+    let result = CACHEDIR.set(tmpdir);
+    match result {
+        Ok(_) => Ok(path),
+        Err(td) => Err(format_err!("Could not init cachedir {:?}", td)),
+    }
+}
+pub fn yellow(warning: impl AsRef<str>) {
+    println!("{}", warning.as_ref().yellow());
+}
+pub fn red(warning: impl AsRef<str>) {
+    println!("{}", warning.as_ref().red());
+}
+pub fn green(warning: impl AsRef<str>) {
+    println!("{}", warning.as_ref().green());
+}
+pub fn neutral(warning: impl AsRef<str>) {
+    println!("{}", warning.as_ref());
+}
+
 #[cfg(test)]
 mod test {
     use super::*;

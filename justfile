@@ -14,7 +14,7 @@ fmt:
 
 test: fmt
     cargo test
-    just test1 test2
+    just test1 test2 test3
 
 build: test 
     cargo build --release 
@@ -45,6 +45,10 @@ test2:test_clean
     just count_folder tmpfolder 3
     just test_fails "{{test_prefix}} sync testing/testconfig2.toml tmpfolder --no-confirm -t conflict -t subfolder"
     {{absent}} tmpfolder/shouldnotexist
+
+test3:test_clean
+    {{test_prefix}} sync testing/testconfig3.toml tmpfolder --no-confirm
+
 
 count_folder folder expected:
     #!/usr/bin/env python3
