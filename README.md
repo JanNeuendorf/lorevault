@@ -154,6 +154,11 @@ If the config file is refered to as `repo#commit:path` (from the cli or by inclu
 the contents of `new/filename.txt` will match the state of `data/file.txt` at the time of that commit. 
 If it is refered to with a path, it is the current version in the folder.
 
+### Details
+The folder is always deleted and recreated. This ensures that there are no subtle changes that can be missed. If it existed before, it is used as a reference. If a file has a defined hash and the file in the folder matches it, it can just be taken from there.
+This means that if the folder was not changed and all hashes are set, nothing needs to be cloned, downloaded or extracted from archives.
+
+A temporary directory is used to store cloned git-repos. It lives for the time of the command and acts as a cache, so we do not need to clone from the same URL multiple times. 
 
 ### Limitations
 
