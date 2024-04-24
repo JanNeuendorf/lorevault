@@ -53,13 +53,14 @@ This is the relative path of the file in the folder. The parent folder is create
 We can specify the SHA3-256 hash of the file.
 
 Then, we list sources for the file. The list is checked in order, so a local copy should be listed first.
+
 It could be a local file:
 ```toml
 [[file.source]]
 type = "file"
 path = "/home/some_path/local_copy" # It must be an absolute path
 ```
-We can specify a local or remote git-repo:
+It could be a local or remote git-repo:
 ```toml
 [[file.source]]
 type = "git"
@@ -70,7 +71,7 @@ path = "path/in/repo"
 Other supported sources are text, URLs and files in archives.
 Folders and symbolic links are not supported. 
 
-When using an inline table, we can use the following notation
+When using an inline table, we can use the following notation:
 ```toml
 [[file]]
 path = "subfolder/my_file"
@@ -104,7 +105,7 @@ type = "text"
 content = "This file was written by {{author}}."
 ignore_variables=false # This is the default. If true, the text is protected.
 ```
-They can not be used inside hashes, tags or types.
+They can not be used inside hashes, tags, types or other variables.
 
 
 ### Including Configs
@@ -162,10 +163,19 @@ A temporary directory is used to store cloned git-repos. It lives for the time o
 
 ### Limitations
 
+- It only works on Unix systems. (Only tested on Linux.)
 - The contents of the folder are created in memory, so very large files are to be avoided.
-- Every file must be named explicitly. There is no support for including folders.
+- Every file must be named explicitly. There is no way to include entire folders.
 - There is no control over metadata/permissions.
-- This is only meant for Linux. (It might work on other Unix systems).
+- There is no support for authentication when cloning a repo.
+
+### Contributing 
+
+**All contribuitions are very welcome, but most of all this project needs testing.**
+
+There are a few tests in the `justfile` to get started. 
+It is, however, very hard to test alone. 
+
 
 
 
