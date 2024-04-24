@@ -32,7 +32,7 @@ cargo install --git https://github.com/JanNeuendorf/lorevault
 
 The command:
 ```sh
-lorevault config.toml targetfolder -t customtag
+lorevault sync config.toml targetfolder -t customtag
 ```
 creates the folder according to the recipe. 
 If the folder already exists, it is restored to the prescribed state with minimal work.
@@ -74,7 +74,7 @@ When using an inline table, we can use the following notation
 ```toml
 [[file]]
 path = "subfolder/my_file"
-sources=["/some/path","repo#commit:path","/path/to/archive.tar:file"]
+sources=["/some/path","repo#commit:path","/path/to/archive.tar.xz:file"]
 ```
 The strings are then parsed into other sources. Only local files, archives and git-repos are supported.
 
@@ -106,10 +106,6 @@ ignore_variables=false # This is the default. If true, the text is protected.
 ```
 They can not be used inside hashes, tags or types.
 
-If the config file is read from a git-repo, the variables 
-`SELF_REPO` and `SELF_COMMIT` are set automatically.
-This allows references to files from the same commit. If it is a local file, `SELF_PARENT` is set.
-`SELF_ROOT` gives either `repo#commit:` or the parent folder.
 
 ### Including Configs
 We can include other configuration files. 
@@ -124,12 +120,49 @@ with_tags=["tag2"] # Will be passed to the other file.
 Variables are not shared between files. Tags for included files can only be activated in the way shown above and are not influenced by the tags activated for the including file.
 No files from included configs can replace files defined locally.
 
+### Relative Paths
+In general, relative paths are not allowed inside config files.
+
+It might, however, be useful to refer to data stored together with the config. 
+This is especially true, if the config is inside a git-repo. 
+
+For this, we can use build-in variables.
+If the config file is read from a git-repo, the variables 
+`SELF_REPO` and `SELF_COMMIT` are set automatically.
+If it is a local file, `SELF_PARENT` is set.
+`SELF_ROOT` gives either `repo#commit:` or the parent folder. 
+
+It is therefore a good convention to put the config file in the root of the project, regardles of whether the project is a git-repo or just a local folder. 
+
+Here is an example:
+```
+project/
+│
+├── config.toml
+│
+└─── data/
+     └── file.txt
+```
+In `config.toml`:
+```toml
+[[file]]
+path = "new/filename.txt"
+sources=["{{SELF_ROOT}}/data/file.txt"]
+```
+
+If the config file is refered to as `repo#commit:path` (from the cli or by inclusion in another config), 
+the contents of `new/filename.txt` will match the state of `data/file.txt` at the time of that commit. 
+If it is refered to with a path, it is the current version in the folder.
+
 
 ### Limitations
 
 - The contents of the folder are created in memory, so very large files are to be avoided.
 - Every file must be named explicitly. There is no support for including folders.
 - There is no control over metadata/permissions.
+- This is only meant for Linux. (It might work on other Unix systems).
+
+
 
 
 
