@@ -74,6 +74,8 @@ test4:test_clean
     just test_fails "{{test_prefix}} example" # should not overwrite existing file
     @diff lorevault_example.toml src/lorevault_example.toml 
     {{test_prefix}} hash tmpfolder/subfolder/fromarchive2.txt
+    {{test_prefix}} list testing/testconfig2.toml
+    {{test_prefix}} list testing/testconfig2.toml -t conflict
 
 # Test 5 checks multiple configurations that have something wrong with them.
 test5:test_clean 

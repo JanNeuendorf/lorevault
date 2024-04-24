@@ -37,7 +37,7 @@ lorevault sync config.toml targetfolder -t customtag
 creates the folder according to the recipe. 
 If the folder already exists, it is restored to the prescribed state with minimal work.
 
-Other subcommands are `check`, to see which sources are valid, `example` to write out a configuration file, `tags` to list the available tags, and `hash` to get the SHA3-256 of a file.
+Other subcommands are `check`, to see which sources are valid, `example` to write out a configuration file, `tags` to list the available tags, `list` to list the files that would be created, and `hash` to get the SHA3-256 of a file.
 
 The configuration file can be read in from a local or remote git-repo with the syntax `repo#commit:path`.
 

@@ -41,6 +41,7 @@ fn main() {
         Commands::Example {} => write_example_config(),
         Commands::Hash { file } => print_hash(file),
         Commands::Tags { file } => print_tags(file),
+        Commands::List { file, tags } => print_list(file, tags),
     };
     if let Err(e) = result {
         red(format!("Error: {}", e));
@@ -156,6 +157,31 @@ fn print_tags(configpath: &str) -> Result<()> {
     let config = Config::from_general_path(configpath, true)?;
     for tag in &config.tags() {
         neutral(format!("- {}", tag));
+    }
+    Ok(())
+}
+
+fn print_list(configpath: &str, tags: &Vec<String>) -> Result<()> {
+    check_recursion(configpath)?;
+    let config = Config::from_general_path(configpath, true)?;
+    let mut active_paths = config
+        .get_active(tags)?
+        .iter()
+        .map(|f| format_subpath(&f.path))
+        .collect::<Vec<PathBuf>>();
+    active_paths.sort_by(|a, b| {
+        let a_components: Vec<_> = a.components().collect();
+        let b_components: Vec<_> = b.components().collect();
+        let max_len = a_components.len().min(b_components.len());
+        for i in 0..max_len {
+            if a_components[i] != b_components[i] {
+                return a_components[..i].cmp(&b_components[..i]);
+            }
+        }
+        a_components.len().cmp(&b_components.len())
+    });
+    for path in active_paths {
+        neutral(format!("{}", path.display()));
     }
     Ok(())
 }

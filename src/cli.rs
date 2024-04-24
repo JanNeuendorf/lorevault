@@ -42,6 +42,12 @@ pub enum Commands {
     Hash { file: String },
     #[command(about = "Lists all the tags defined in the file")]
     Tags { file: String },
+    #[command(about = "Lists all the files that would be in the folder.")]
+    List {
+        file: String,
+        #[arg(short, long)]
+        tags: Vec<String>,
+    },
 }
 
 // A "general_path" is a string that might be a path or repo#commit:subpath
