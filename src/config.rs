@@ -1,8 +1,7 @@
-use self::{cli::source_from_string_simple, sources::is_url};
 use crate::*;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
-const INCLUSION_RECURSION_LIMIT: usize = 10;
+const INCLUSION_RECURSION_LIMIT: usize = 10; // The depth of inclusions of other config files.
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde_as]
@@ -21,11 +20,13 @@ pub struct Config {
 }
 
 impl Config {
+    // This gets all files that should be included given the list of tags.
+    // It should error if two tagged files or two untagged files have the same path.
+    // If an untagged file and a tagged file have the same path, only the tagged one is active.
     pub fn get_active(&self, tags: &Vec<String>) -> Result<Vec<File>> {
         if !self.variables_set {
-            return Err(format_err!(
-                "Variables and inclusions must have been set to get file list"
-            ));
+            return Err(format_err!("Variables must have been set to get file list"));
+            //Should never happen, as long as we call set_variables() first.
         }
         let defined_tags = self.tags();
         for requested_tag in tags {
@@ -60,12 +61,14 @@ impl Config {
             new_content.push(item.clone());
             paths.push(item.get_path().clone())
         }
+        // The logic for included files is different in a subtle way.
+        // Even tagged included files do not overwrite other untagged files. They give an error, if the paths collide.
+        // This prevents a situation where an update to the included config overwrites the content of files defined locally.
         for inc in &self.inclusions {
             let files_to_include = inc.get_files()?;
             for f2i in files_to_include {
                 if f2i.is_active(tags) {
                     if paths.contains(&f2i.path) {
-                        //println!("inc: {:?} file: {:?}",&inc,&f2i);
                         return Err(format_err!(
                             "There are two files for path {}",
                             &f2i.get_path().to_string_lossy()
@@ -90,20 +93,32 @@ impl Config {
         Ok(new_content)
     }
 
-    fn from_filesource(source: &FileSource) -> Result<Self> {
+    fn from_filesource(source: &FileSource, allow_local: bool) -> Result<Self> {
         let data = match source {
-            FileSource::Local { path } => fs::read(path)
-                .context(format!("Could not load config {}", path.to_string_lossy()))?,
-            _ => source.fetch()?,
+            FileSource::Local { path } => {
+                if path.is_relative() && !allow_local {
+                    return Err(format_err!(
+                        "Trying to load config from local file {:?}",
+                        path
+                    ));
+                }
+                fs::read(path)
+                    .context(format!("Could not load config {}", path.to_string_lossy()))?
+            }
+            FileSource::Git { .. } => source.fetch()?,
+            _ => {
+                return Err(format_err!("Loading config from unsupported filesource."));
+            }
         };
         let toml_string = String::from_utf8(data)?;
         let conf: Self = toml::from_str(&toml_string)?;
         Ok(conf.set_variables(source)?)
     }
 
-    pub fn from_general_path(general_path: &str) -> Result<Self> {
+    // The allow_local flag is to make sure that local files are only valid, when the path was passed on the cli.
+    pub fn from_general_path(general_path: &str, allow_local: bool) -> Result<Self> {
         let source = cli::source_from_string_simple(general_path)?;
-        Self::from_filesource(&source)
+        Self::from_filesource(&source, allow_local)
     }
     #[allow(unused)]
     pub fn write(&self, path: &PathBuf) -> Result<()> {
@@ -248,7 +263,7 @@ pub struct Inclusion {
 impl Inclusion {
     pub fn get_files(&self) -> Result<Vec<File>> {
         let config_source = source_from_string_simple(&self.config)?;
-        let config = Config::from_filesource(&config_source)?;
+        let config = Config::from_filesource(&config_source, false)?;
         let mut files: Vec<File> = vec![];
         for original_file in config.get_active(&self.with_tags)? {
             files.push(File {
@@ -263,12 +278,14 @@ impl Inclusion {
     }
 }
 
+// This is just a helper function to check if the inclusions might be recursive
 fn get_next_inclusion_level(cfgs: &Vec<String>) -> Result<Vec<String>> {
     let mut tmp = vec![];
 
     for cfg in cfgs {
+        let allow_local = tmp.len() == 0;
         tmp.push(
-            Config::from_general_path(cfg)?
+            Config::from_general_path(cfg, allow_local)?
                 .inclusions
                 .iter()
                 .map(|inc| inc.config.to_string())
@@ -278,6 +295,8 @@ fn get_next_inclusion_level(cfgs: &Vec<String>) -> Result<Vec<String>> {
     Ok(vecset(tmp))
 }
 
+// This can be used to check for recursion in the inclusions.
+// It must be manually called and checked before loading the config file.
 pub fn check_recursion(cfg: &str) -> Result<()> {
     let mut next_deps = vec![cfg.to_string()];
     for _ in 0..INCLUSION_RECURSION_LIMIT {

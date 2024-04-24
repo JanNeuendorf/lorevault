@@ -1,0 +1,5 @@
+# The local path is valid if we run it from the project root, but local includes are not allowed.
+[[include]]
+config="testing/included1.toml"
+with_tags=["main"]
+

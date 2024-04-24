@@ -10,16 +10,19 @@ fmt:
 clean: test_clean
     -rm -r target
 
-test_clean:
+@test_clean:
     -rm -r tmpfolder
     - rm lorevault_example.toml
 
 test: fmt
     cargo test
-    just test1 test2 test3 test4
+    just test1 test2 test3 test4 test5
 
 build: test 
     cargo build --release
+
+install:
+    cargo install --path="{{justfile_directory()}}"
 
 # This should result in a statically linked binary.
 build_static: test
@@ -68,9 +71,14 @@ test4:test_clean
     @just test_fails "{{test_prefix}} check testing/testconfig4.toml" # One source give an invalied hash
     {{test_prefix}} tags testing/testconfig4.toml
     {{test_prefix}} example 
+    just test_fails "{{test_prefix}} example" # should not overwrite existing file
     @diff lorevault_example.toml src/lorevault_example.toml 
     {{test_prefix}} hash tmpfolder/subfolder/fromarchive2.txt
 
+# Test 5 checks multiple configurations that have something wrong with them.
+test5:test_clean 
+    just test_fails "{{test_prefix}} sync testing/failure1.toml tmpfolder/ -t inc"
+    just test_fails "{{test_prefix}} sync testing/failure2.toml tmpfolder/"
 
 # Check if a folder contains the expected number of items.
 count_folder folder expected:

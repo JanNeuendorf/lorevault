@@ -1,6 +1,6 @@
 [package]
 name = "lorevault"
-version = "0.6.5"
+version = "0.6.7"
 edition = "2021"
 authors = ["Jan Neuendorf"]
 description = "A simple program to create a folder from a recipe."
@@ -30,5 +30,6 @@ opt-level = 3
 strip = true 
 lto = true
 
+# By activating the vendored openssl crate, this can be statically linked.
 [features]
 static = ["openssl"]

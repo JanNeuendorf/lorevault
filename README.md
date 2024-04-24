@@ -74,7 +74,7 @@ When using an inline table, we can use the following notation
 ```toml
 [[file]]
 path = "subfolder/my_file"
-sources=["/some/path","repo#commit:path","/path/to/archive.tar:file]
+sources=["/some/path","repo#commit:path","/path/to/archive.tar:file"]
 ```
 The strings are then parsed into other sources. Only local files, archives and git-repos are supported.
 
@@ -115,13 +115,14 @@ This allows references to files from the same commit. If it is a local file, `SE
 We can include other configuration files. 
 ```toml
 [[include]]
-config="included.toml" # Can be repo#commit:path
+config="/path/to/included.toml" # Can be repo#commit:path
 subfolder="files/go/here" # Defaults to folder root.
 required_tags=["tag1"] # If not set, the file will not be included.
 with_tags=["tag2"] # Will be passed to the other file.
 
 ```
-Variables are not shared between files. Tags for included files can only be activated in the way shown above and are not influenced by the tags activated for the including file. 
+Variables are not shared between files. Tags for included files can only be activated in the way shown above and are not influenced by the tags activated for the including file.
+No files from included configs can replace files defined locally.
 
 
 ### Limitations

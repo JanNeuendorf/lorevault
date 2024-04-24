@@ -29,27 +29,28 @@ pub enum Commands {
         no_confirm: bool,
     },
     #[command(
-        about = "Print a report.",
-        long_about = "Print a report on the config. Fails if a file has no valid sources or a hash does not match"
+        about = "Print a report",
+        long_about = "Prints a report on the config. Fails if a file has no valid sources or a hash does not match"
     )]
     Check {
         #[arg(help = "Config file")]
         file: String,
     },
-    #[command(about = "Writes out an example configuration file")]
+    #[command(about = "Writes out an example configuration file", alias = "init")]
     Example {},
-    #[command(about = "Prints the sha3-256 hash of a file.")]
+    #[command(about = "Prints the SHA3-256 hash of a file")]
     Hash { file: String },
     #[command(about = "Lists all the tags defined in the file")]
     Tags { file: String },
 }
 
+// A "general_path" is a string that might be a path or repo#commit:subpath
 fn is_repo(general_path: &str) -> bool {
     let re = Regex::new(r".*#[0-9a-fA-F]{7,40}:.*").expect("regular expression pattern invalid");
-
     re.is_match(general_path)
 }
 
+// Gets (repo,commit,subpath) from a general path
 fn extract_components(s: &str) -> Option<(String, String, String)> {
     let re =
         Regex::new(r"(.*?)#([0-9a-fA-F]{7,40}):(.*)").expect("regular expression pattern invalid");
@@ -65,6 +66,9 @@ fn extract_components(s: &str) -> Option<(String, String, String)> {
     }
 }
 
+// Takes a general path and tries to parse it into a filesource.
+// It is called simple because it does not support archives. The config can not be loaded from an archive.
+// The reason for this is the added complexity with the SELF_ variables. It is probably not a common usecase.
 pub fn source_from_string_simple(general_path: &str) -> Result<sources::FileSource> {
     if is_repo(general_path) {
         match extract_components(general_path) {

@@ -10,7 +10,7 @@ use colored::*;
 use config::{check_recursion, Config, File};
 use memfolder::MemFolder;
 use once_cell::sync::OnceCell;
-use sources::{compute_hash, fetch_first_valid, format_subpath, FileSource};
+use sources::{compute_hash, fetch_first_valid, format_subpath, is_url, FileSource};
 use std::{
     collections::HashMap,
     fs,
@@ -55,7 +55,7 @@ fn sync_folder(
     no_confirm: bool,
 ) -> Result<()> {
     check_recursion(config_path)?;
-    let conf = Config::from_general_path(config_path)?;
+    let conf = Config::from_general_path(config_path, true)?;
     let reference = MemFolder::load_from_folder(output).unwrap_or(MemFolder::empty());
     let memfolder = MemFolder::load_first_valid_with_ref(&conf, tags, &reference)?;
 
@@ -69,7 +69,7 @@ fn sync_folder(
 
 fn check(config_path: &str) -> Result<()> {
     check_recursion(config_path)?;
-    let conf = Config::from_general_path(config_path)?;
+    let conf = Config::from_general_path(config_path, true)?;
     let number_of_sources = conf.get_all()?.iter().map(|f| &f.sources).flatten().count();
     let mut source_counter = 0;
     for file in conf.get_all()? {
@@ -153,7 +153,7 @@ fn print_hash(path: &str) -> Result<()> {
 }
 fn print_tags(configpath: &str) -> Result<()> {
     check_recursion(configpath)?;
-    let config = Config::from_general_path(configpath)?;
+    let config = Config::from_general_path(configpath, true)?;
     for tag in &config.tags() {
         neutral(format!("- {}", tag));
     }
