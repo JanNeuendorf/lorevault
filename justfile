@@ -82,6 +82,12 @@ test5:test_clean
     just test_fails "{{test_prefix}} sync testing/failure1.toml tmpfolder/ -t inc"
     just test_fails "{{test_prefix}} sync testing/failure2.toml tmpfolder/"
 
+test6:test_clean
+    {{test_prefix}} sync testing/testconfig6.toml tmpfolder --no-confirm
+    diff tmpfolder/included/main.rs src/main.rs
+    {{test_prefix}} sync testing/testconfig6.toml tmpfolder --no-confirm -t overwrite
+    diff tmpfolder/included/main.rs src/cli.rs
+
 # Check if a folder contains the expected number of items.
 count_folder folder expected:
     #!/usr/bin/env python3
