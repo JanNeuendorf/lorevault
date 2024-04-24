@@ -7,7 +7,7 @@ var.lv_commit="3132eec850323fd2f845249e71dbb5ffdd405f5c"
 
 [[file]]
 path="alias1.md"
-sources=["{{rust_git_repo}}#{{rust_git_commit}}:/README.md"]
+sources=["{{rust_git_repo}}#{{rust_git_commit}}:README.md"] # "/" should not matter
 
 [[file]]
 path="alias2.md"

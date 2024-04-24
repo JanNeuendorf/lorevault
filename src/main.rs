@@ -43,8 +43,7 @@ fn main() {
         Commands::Tags { file } => print_tags(file),
     };
     if let Err(e) = result {
-        let warning = format!("Error: {}", e);
-        println!("{}", warning.red());
+        red(format!("Error: {}", e));
         exit(1)
     }
 }
@@ -75,16 +74,15 @@ fn check(config_path: &str) -> Result<()> {
     let mut source_counter = 0;
     for file in conf.get_all()? {
         if file.hash.is_none() {
-            let warning = format!(
+            yellow(format!(
                 "No hash for {}",
                 display_filename(file.get_path(), &file.get_tags())
-            );
-            println!("{}", warning.yellow())
+            ));
         } else {
-            println!(
+            neutral(format!(
                 "working on {}",
                 display_filename(file.get_path(), &file.get_tags())
-            );
+            ));
         }
         let mut working_hash = file.hash.clone();
         let mut misses = 0;
@@ -104,19 +102,17 @@ fn check(config_path: &str) -> Result<()> {
                         }
                         None => working_hash = Some(current_hash),
                     }
-                    let msg = format!(
+                    green(format!(
                         "Checked {}/{} : {:?}",
                         source_counter, number_of_sources, source
-                    );
-                    println!("{}", msg.green());
+                    ));
                 }
                 Err(e) => {
-                    let warning = format!(
+                    yellow(format!(
                         "Failed {}/{} : {:?}",
                         source_counter, number_of_sources, source
-                    );
-                    println!("{}", warning.yellow());
-                    println!("{}", format!("{}", e).yellow());
+                    ));
+                    yellow(format!("{}", e));
                     misses = misses + 1;
                     if misses == file.sources.len() {
                         return Err(format_err!(
@@ -145,22 +141,21 @@ fn write_example_config() -> Result<()> {
         return Err(format_err!("lorevault_example.toml already exists."));
     }
     fs::write("lorevault_example.toml", conf)?;
-    let msg = "Saved example as lorevault_example.toml".green();
-    println!("{}", msg);
+    green("Saved example as lorevault_example.toml");
     Ok(())
 }
 
 fn print_hash(path: &str) -> Result<()> {
     let content = fs::read(path)?;
     let hash = compute_hash(&content);
-    println!("hash = \"{}\"", hash);
+    neutral(format!("hash = \"{}\"", hash));
     Ok(())
 }
 fn print_tags(configpath: &str) -> Result<()> {
     check_recursion(configpath)?;
     let config = Config::from_general_path(configpath)?;
     for tag in &config.tags() {
-        println!("- {}", tag);
+        neutral(format!("- {}", tag));
     }
     Ok(())
 }
@@ -177,14 +172,14 @@ fn init_cache_dir() -> Result<PathBuf> {
 pub fn yellow(warning: impl AsRef<str>) {
     println!("{}", warning.as_ref().yellow());
 }
-pub fn red(warning: impl AsRef<str>) {
-    println!("{}", warning.as_ref().red());
+pub fn red(error: impl AsRef<str>) {
+    println!("{}", error.as_ref().red());
 }
-pub fn green(warning: impl AsRef<str>) {
-    println!("{}", warning.as_ref().green());
+pub fn green(message: impl AsRef<str>) {
+    println!("{}", message.as_ref().green());
 }
-pub fn neutral(warning: impl AsRef<str>) {
-    println!("{}", warning.as_ref());
+pub fn neutral(message: impl AsRef<str>) {
+    println!("{}", message.as_ref());
 }
 
 #[cfg(test)]

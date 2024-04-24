@@ -97,17 +97,15 @@ pub fn fetch_first_valid(sources: &Vec<FileSource>, hash: &Option<String>) -> Re
                 {
                     return result;
                 } else {
-                    let warn = format!("Invalid hash {:?}", &s);
-                    println!("{}", warn.red());
+                    red(format!("Invalid hash {:?}", &s));
                 }
             }
         } else {
-            let warn = format!(
+            red(format!(
                 "Invalid source {:?} \nError: {}",
                 &s,
                 result.err().expect("error branch")
-            );
-            println!("{}", warn.red());
+            ));
         }
     }
     return Err(format_err!("No valid source in list."));
