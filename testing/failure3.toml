@@ -1,0 +1,10 @@
+
+[[include]]
+config="{{SELF_ROOT}}/included1.toml"
+with_tags=["main"]
+tags=["inc"]
+
+[[include]]
+config="{{SELF_ROOT}}/included1.toml"
+with_tags=["main"]
+

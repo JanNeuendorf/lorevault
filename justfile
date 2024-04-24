@@ -81,7 +81,9 @@ test4:test_clean
 test5:test_clean 
     just test_fails "{{test_prefix}} sync testing/failure1.toml tmpfolder/ -t inc"
     just test_fails "{{test_prefix}} sync testing/failure2.toml tmpfolder/"
+    just test_fails "{{test_prefix}} sync testing/failure3.toml tmpfolder/ -t inc"
 
+# Test t checks that a file which is included from another config without a tag can be replaced by a local file
 test6:test_clean
     {{test_prefix}} sync testing/testconfig6.toml tmpfolder --no-confirm
     diff tmpfolder/included/main.rs src/main.rs

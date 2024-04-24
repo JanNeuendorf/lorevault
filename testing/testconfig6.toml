@@ -1,4 +1,3 @@
-# Even though the included file has a tag and the local one does not, it should not be allowed.
 [[include]]
 config="{{SELF_ROOT}}/included1.toml"
 with_tags=["main"]
