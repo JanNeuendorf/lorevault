@@ -4,7 +4,7 @@ use dialoguer::Confirm;
 use regex::Regex;
 
 #[derive(Parser, Debug)]
-#[command(version, about, long_about =Some("Make a folder reproducible by specifying its contents in a file."))]
+#[command(version, about, long_about =Some("Make a directory reproducible by specifying its contents in a file."))]
 #[command(propagate_version = true)]
 pub struct Cli {
     #[command(subcommand)]
@@ -17,14 +17,14 @@ pub enum Commands {
     Sync {
         #[arg(help = "Config file", long_help = "Supports repo#commit:path")]
         file: String,
-        #[arg(help = "Destination folder")]
+        #[arg(help = "Destination directory")]
         output: PathBuf,
         #[arg(short, long)]
         tags: Vec<String>,
         #[arg(
             long,
             default_value = "false",
-            help = "Overwrite target folder without confirmation"
+            help = "Overwrite target directory without confirmation"
         )]
         no_confirm: bool,
     },
@@ -42,7 +42,7 @@ pub enum Commands {
     Hash { file: String },
     #[command(about = "Lists all the tags defined in the file")]
     Tags { file: String },
-    #[command(about = "Lists all the files that would be in the folder.")]
+    #[command(about = "Lists all the files that would be in the directory.")]
     List {
         file: String,
         #[arg(short, long)]
