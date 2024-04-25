@@ -34,7 +34,7 @@ The command:
 ```sh
 lorevault sync config.toml targetdir -t customtag
 ```
-creates the directory at 'targetdir' according to the recipe. 
+creates the directory at `targetdir` according to the recipe. 
 If the directory already exists, it is restored to the prescribed state with minimal work.
 
 Other subcommands are `check`, to see which sources are valid, `example` to write out a configuration file, `tags` to list the available tags, `list` to list the files that would be created, and `hash` to get the SHA3-256 of a file.
