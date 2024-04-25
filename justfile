@@ -16,7 +16,7 @@ clean: test_clean
 
 test: fmt
     cargo test
-    just test1 test2 test3 test4 test5 test6
+    just test1 test2 test3 test4 test5 test6 test7
 
 build: test 
     cargo build --release
@@ -42,7 +42,7 @@ test1:test_clean
     @just count_folder tmpfolder/subfolder 2
     {{test_prefix}} sync testing/testconfig1.toml tmpfolder --no-confirm -t file2
     # It should fail if the tag was not defined in the config
-    @just test_fails "{{test_prefix}} sync testing/testconfig1.toml tmpfolder --no-confirm -t wrongtag"
+    @just error_contains "{{test_prefix}} sync testing/testconfig1.toml tmpfolder --no-confirm -t wrongtag" "The tag wrongtag is not defined"
     @just count_folder tmpfolder 3
     @just count_folder tmpfolder/subfolder 3
 
@@ -57,7 +57,7 @@ test2:test_clean
     {{test_prefix}} sync testing/testconfig2.toml tmpfolder --no-confirm -t conflict
     @just count_folder tmpfolder 3
     # While the tags "subfolder" and "conflict" work in separation, their paths conflict.
-    @just test_fails "{{test_prefix}} sync testing/testconfig2.toml tmpfolder --no-confirm -t conflict -t subfolder"
+    @just error_contains "{{test_prefix}} sync testing/testconfig2.toml tmpfolder --no-confirm -t conflict -t subfolder" "There are two files for"
     {{absent}} tmpfolder/shouldnotexist
 
 # Test 3 exists to check if remote repos are cloned only once. 
@@ -68,10 +68,10 @@ test3:test_clean
 # Test 4 checks that the other cli commands work
 test4:test_clean 
     {{test_prefix}} sync testing/testconfig4.toml tmpfolder --no-confirm
-    @just test_fails "{{test_prefix}} check testing/testconfig4.toml" # One source give an invalied hash
+    @just error_contains "{{test_prefix}} check testing/testconfig4.toml" "Hash did not match" 
     {{test_prefix}} tags testing/testconfig4.toml
     {{test_prefix}} example 
-    just test_fails "{{test_prefix}} example" # should not overwrite existing file
+    @just error_contains "{{test_prefix}} example" "already exists"
     @diff lorevault_example.toml src/lorevault_example.toml 
     {{test_prefix}} hash tmpfolder/subfolder/fromarchive2.txt
     {{test_prefix}} list testing/testconfig2.toml
@@ -79,16 +79,21 @@ test4:test_clean
 
 # Test 5 checks multiple configurations that have something wrong with them.
 test5:test_clean 
-    just test_fails "{{test_prefix}} sync testing/failure1.toml tmpfolder/ -t inc"
-    just test_fails "{{test_prefix}} sync testing/failure2.toml tmpfolder/"
-    just test_fails "{{test_prefix}} sync testing/failure3.toml tmpfolder/ -t inc"
+    just error_contains "{{test_prefix}} sync testing/failure1.toml tmpfolder/ -t inc" "two files for path included/main.rs"
+    just error_contains "{{test_prefix}} sync testing/failure2.toml tmpfolder/" "relative path"
+    just error_contains "{{test_prefix}} sync testing/failure3.toml tmpfolder/ -t inc" "two files for path included/main.rs"
 
-# Test t checks that a file which is included from another config without a tag can be replaced by a local file
+# Test 6 checks that a file which is included from another config without a tag can be replaced by a local file
 test6:test_clean
     {{test_prefix}} sync testing/testconfig6.toml tmpfolder --no-confirm
     diff tmpfolder/included/main.rs src/main.rs
     {{test_prefix}} sync testing/testconfig6.toml tmpfolder --no-confirm -t overwrite
     diff tmpfolder/included/main.rs src/cli.rs
+
+# Test 7 checks if variables reference other variables correctly.
+test7:test_clean
+    {{test_prefix}} sync testing/testconfig7.toml tmpfolder --no-confirm
+    {{exists}} tmpfolder/subfolder/my_value/subsubfolder/file.txt
 
 # Check if a folder contains the expected number of items.
 count_folder folder expected:
@@ -96,10 +101,17 @@ count_folder folder expected:
     import os
     assert(len(os.listdir("{{folder}}"))=={{expected}})
 
-# Fails if the provided command works.
-test_fails command:
+error_contains command msg:
     #!/usr/bin/env python3
-    import os
-    assert(os.system("{{command}}> /dev/null 2>&1")!=0)
+    import subprocess
+    result = subprocess.run("{{command}}", shell=True, capture_output=True, text=True)
+    if (result.returncode==0):
+        print("Command refused to fail")
+        exit(1)
 
+    if ("{{msg}}" not in result.stderr):
+        print("Wrong error message:")
+        print(result.stderr)
+        exit(1)
 
+           

@@ -1,0 +1,12 @@
+
+[variables] # An alternative to the var. syntax
+my_var="my_value"
+complex_var="subfolder/{{my_var}}"
+more_complex_var="{{complex_var}}/subsubfolder" # testing vars referencing other vars.
+
+[[file]]
+path="{{more_complex_var}}/file.txt"
+[[file.source]]
+type="text"
+content="The value of my_var in double brackets {{{{my_var}}}}"
+

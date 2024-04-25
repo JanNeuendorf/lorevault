@@ -38,6 +38,7 @@ impl VariableCompletion for String {
         return Ok(self.clone());
     }
 }
+
 impl VariableCompletion for PathBuf {
     fn required_variables(&self) -> Result<Vec<String>> {
         self.to_str()
@@ -187,6 +188,40 @@ impl VariableCompletion for Inclusion {
     }
 }
 
+pub fn resolve_variable_inter_refs(
+    vars_in: &HashMap<String, String>,
+) -> Result<HashMap<String, String>> {
+    let mut resolved: HashMap<String, String> = HashMap::new();
+    let mut current_resolved_count = 0;
+    for _ in 0..1000 {
+        // This could be a while loop, but I want to make sure there is no recursive case that is missed.
+        for (k, v) in vars_in {
+            if v.required_variables()?.len() == 0 {
+                resolved.insert(k.clone(), v.clone());
+            } else {
+                match v.set_variables(&resolved) {
+                    Ok(filled) => {
+                        resolved.insert(k.clone(), filled.clone());
+                    }
+                    Err(_) => continue,
+                }
+            }
+        }
+        if resolved.len() == current_resolved_count {
+            return Err(format_err!(
+                "There seems to be some problem with variable inter-reference."
+            ));
+        } else if resolved.len() == vars_in.len() {
+            return Ok(resolved);
+        } else {
+            current_resolved_count = resolved.len();
+        }
+    }
+    Err(format_err!(
+        "There seems to be some problem with variable inter-reference."
+    ))
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -196,6 +231,32 @@ mod test {
         assert_eq!(
             "the var is varvalue".to_string(),
             str.set_single_variable("varname", "varvalue").unwrap()
+        );
+    }
+    #[test]
+    fn test_var_inter_ref() {
+        let mut vars_in = HashMap::new();
+        vars_in.insert("simple".to_string(), "value".to_string());
+        vars_in.insert("complex".to_string(), "plainand{{simple}}".to_string());
+        vars_in.insert(
+            "more_complex".to_string(),
+            "{{simple}} and {{complex}}".to_string(),
+        );
+        vars_in.insert(
+            "even_more_complex".to_string(),
+            "{{{{more_complex}}}}".to_string(),
+        );
+
+        let vars_out = resolve_variable_inter_refs(&vars_in).unwrap();
+        assert_eq!(vars_out.get("simple").unwrap(), "value");
+        assert_eq!(vars_out.get("complex").unwrap(), "plainandvalue");
+        assert_eq!(
+            vars_out.get("more_complex").unwrap(),
+            "value and plainandvalue"
+        );
+        assert_eq!(
+            vars_out.get("even_more_complex").unwrap(),
+            "{{value and plainandvalue}}"
         );
     }
 }

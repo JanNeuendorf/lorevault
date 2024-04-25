@@ -199,7 +199,7 @@ pub fn yellow(warning: impl AsRef<str>) {
     println!("{}", warning.as_ref().yellow());
 }
 pub fn red(error: impl AsRef<str>) {
-    println!("{}", error.as_ref().red());
+    eprintln!("{}", error.as_ref().red());
 }
 pub fn green(message: impl AsRef<str>) {
     println!("{}", message.as_ref().green());

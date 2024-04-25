@@ -102,7 +102,7 @@ impl Config {
             FileSource::Local { path } => {
                 if path.is_relative() && !allow_local {
                     return Err(format_err!(
-                        "Trying to load config from local file {:?}",
+                        "Trying to load config from relative path {:?}",
                         path
                     ));
                 }
@@ -195,7 +195,7 @@ impl Config {
             }
             _ => {}
         }
-
+        vars = resolve_variable_inter_refs(&vars)?;
         new.content = new.content.set_variables(&vars)?;
         new.inclusions = new.inclusions.set_variables(&vars)?;
         Ok(Self {
@@ -261,7 +261,7 @@ pub struct Inclusion {
     pub tags: Option<Vec<String>>,
     #[serde(default)]
     pub with_tags: Vec<String>,
-    #[serde(default, alias = "path")]
+    #[serde(default, alias = "path", alias = "subdir", alias = "subdirectory")]
     pub subfolder: PathBuf,
 }
 impl Inclusion {

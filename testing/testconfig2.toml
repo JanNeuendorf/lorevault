@@ -2,7 +2,7 @@ var.local_var="local"
 [[include]]
 config="{{SELF_ROOT}}/included1.toml"
 with_tags=[] #Should load no files
-subfolder="shouldnotexist"
+subdir="shouldnotexist"
 
 [[include]]
 config="{{SELF_ROOT}}/included1.toml"
@@ -11,7 +11,7 @@ with_tags=["main"]
 [[include]]
 tags=["subfolder"]
 config="{{SELF_ROOT}}/included1.toml"
-subfolder="subfolder"
+subdir="subfolder"
 with_tags=["main"]
 
 [[file]]
