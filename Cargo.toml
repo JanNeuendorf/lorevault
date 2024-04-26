@@ -3,7 +3,7 @@ name = "lorevault"
 version = "0.7.1"
 edition = "2021"
 authors = ["Jan Neuendorf"]
-description = "A simple program to create a folder from a recipe."
+description = "A simple program to create a directory from a recipe."
 license="MIT"
 
 [dependencies]
