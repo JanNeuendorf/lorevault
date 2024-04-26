@@ -69,3 +69,6 @@ config="/path/to/included.toml" # Must be absolute. Can be repo#commit:path
 subdir="files/go/here" # Defaults to directory root.
 required_tags=["tag1"] # If not set, the file will not be included.
 with_tags=["tag2"] # Will be passed to the other file.
+# The optional hash of the included config file itself.
+hash = "69C2DA8874560C982F896938B744752F304E35EEEC63E7F5967E4E68FAD03070"
+ 

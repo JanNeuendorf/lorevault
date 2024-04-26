@@ -1,0 +1,6 @@
+
+[[include]]
+config="{{SELF_ROOT}}/included1.toml"
+with_tags=["main"]
+hash="wronghash"
+

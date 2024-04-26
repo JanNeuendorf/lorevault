@@ -56,7 +56,7 @@ fn sync_folder(
     no_confirm: bool,
 ) -> Result<()> {
     check_recursion(config_path)?;
-    let conf = Config::from_general_path(config_path, true)?;
+    let conf = Config::from_general_path(config_path, true, None)?;
     let reference = MemFolder::load_from_folder(output).unwrap_or(MemFolder::empty());
     let memfolder = MemFolder::load_first_valid_with_ref(&conf, tags, &reference)?;
 
@@ -70,7 +70,7 @@ fn sync_folder(
 
 fn check(config_path: &str) -> Result<()> {
     check_recursion(config_path)?;
-    let conf = Config::from_general_path(config_path, true)?;
+    let conf = Config::from_general_path(config_path, true, None)?;
     let number_of_sources = conf.get_all()?.iter().map(|f| &f.sources).flatten().count();
     let mut source_counter = 0;
     for file in conf.get_all()? {
@@ -154,7 +154,7 @@ fn print_hash(path: &str) -> Result<()> {
 }
 fn print_tags(configpath: &str) -> Result<()> {
     check_recursion(configpath)?;
-    let config = Config::from_general_path(configpath, true)?;
+    let config = Config::from_general_path(configpath, true, None)?;
     for tag in &config.tags() {
         neutral(format!("- {}", tag));
     }
@@ -163,7 +163,7 @@ fn print_tags(configpath: &str) -> Result<()> {
 
 fn print_list(configpath: &str, tags: &Vec<String>) -> Result<()> {
     check_recursion(configpath)?;
-    let config = Config::from_general_path(configpath, true)?;
+    let config = Config::from_general_path(configpath, true, None)?;
     let mut active_paths = config
         .get_active(tags)?
         .iter()

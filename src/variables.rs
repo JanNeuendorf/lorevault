@@ -184,6 +184,7 @@ impl VariableCompletion for Inclusion {
             subfolder: self.subfolder.set_single_variable(key, value)?,
             tags: self.tags.clone(),
             with_tags: self.with_tags.clone(),
+            hash: self.hash.clone(),
         })
     }
 }

@@ -7,6 +7,7 @@ subdir="shouldnotexist"
 [[include]]
 config="{{SELF_ROOT}}/included1.toml"
 with_tags=["main"]
+hash = "69C2DA8874560C982F896938B744752F304E35EEEC63E7F5967E4E68FAD03070"
 
 [[include]]
 tags=["subfolder"]

@@ -97,7 +97,7 @@ impl Config {
         Ok(new_content)
     }
 
-    fn from_filesource(source: &FileSource, allow_local: bool) -> Result<Self> {
+    fn from_filesource(source: &FileSource, allow_local: bool, hash: Option<&str>) -> Result<Self> {
         let data = match source {
             FileSource::Local { path } => {
                 if path.is_relative() && !allow_local {
@@ -114,6 +114,12 @@ impl Config {
                 return Err(format_err!("Loading config from unsupported filesource."));
             }
         };
+
+        if let Some(hash) = hash {
+            if compute_hash(&data) != hash {
+                return Err(format_err!("Hash of loaded config did not match."));
+            }
+        }
         let toml_string = String::from_utf8(data)?;
         if toml_string == include_str!("lorevault_example.toml") {
             return Err(format_err!(
@@ -126,9 +132,13 @@ impl Config {
     }
 
     // The allow_local flag is to make sure that local files are only valid, when the path was passed on the cli.
-    pub fn from_general_path(general_path: &str, allow_local: bool) -> Result<Self> {
+    pub fn from_general_path(
+        general_path: &str,
+        allow_local: bool,
+        hash: Option<&str>,
+    ) -> Result<Self> {
         let source = cli::source_from_string_simple(general_path)?;
-        Self::from_filesource(&source, allow_local)
+        Self::from_filesource(&source, allow_local, hash)
     }
     #[allow(unused)]
     pub fn write(&self, path: &PathBuf) -> Result<()> {
@@ -269,11 +279,12 @@ pub struct Inclusion {
     pub with_tags: Vec<String>,
     #[serde(default, alias = "path", alias = "subdir", alias = "subdirectory")]
     pub subfolder: PathBuf,
+    pub hash: Option<String>,
 }
 impl Inclusion {
     pub fn get_files(&self) -> Result<Vec<File>> {
-        let config_source = source_from_string_simple(&self.config)?;
-        let config = Config::from_filesource(&config_source, false)?;
+        let config =
+            Config::from_general_path(&self.config, false, self.hash.as_ref().map(|s| s.as_str()))?;
         let mut files: Vec<File> = vec![];
         for original_file in config.get_active(&self.with_tags)? {
             files.push(File {
@@ -295,7 +306,7 @@ fn get_next_inclusion_level(cfgs: &Vec<String>) -> Result<Vec<String>> {
     for cfg in cfgs {
         let allow_local = tmp.len() == 0;
         tmp.push(
-            Config::from_general_path(cfg, allow_local)?
+            Config::from_general_path(cfg, allow_local, None)?
                 .inclusions
                 .iter()
                 .map(|inc| inc.config.to_string())
