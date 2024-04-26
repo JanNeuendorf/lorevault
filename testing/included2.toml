@@ -1,0 +1,4 @@
+[[file]]
+hash = "7C4D8154285FA166277835810027AE5970AE388CF7A78209DDAC184880B46C8C"
+path="fromarchive_included.txt"
+sources=["{{SELF_ROOT}}/testarchive.zip:subfolder/file2.txt","{{SELF_ROOT}}/testarchive.tar.xz:/subfolder/file2.txt"]

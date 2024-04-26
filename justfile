@@ -83,7 +83,6 @@ test5:test_clean
     just error_contains "{{test_prefix}} sync testing/failure2.toml tmpfolder/" "relative path"
     just error_contains "{{test_prefix}} sync testing/failure3.toml tmpfolder/ -t inc" "two files for path included/main.rs"
     just error_contains "{{test_prefix}} sync testing/failure4.toml tmpfolder/" "Hash of loaded config"
-    just error_contains "{{test_prefix}} check -p testing/testconfig2.toml" "files or inclusions without hashes"
 # Test 6 checks that a file which is included from another config without a tag can be replaced by a local file
 test6:test_clean
     {{test_prefix}} sync testing/testconfig6.toml tmpfolder --no-confirm
@@ -95,6 +94,11 @@ test6:test_clean
 test7:test_clean
     {{test_prefix}} sync testing/testconfig7.toml tmpfolder --no-confirm
     {{exists}} tmpfolder/subfolder/my_value/subsubfolder/file.txt
+
+# Test if the pedantic flag works:
+test8:test_clean
+    just error_contains "{{test_prefix}} check -p testing/testconfig2.toml" "files or inclusions without hashes"
+    {{test_prefix}} check -p testing/testconfig8.toml
 
 # Check if a folder contains the expected number of items.
 count_folder folder expected:

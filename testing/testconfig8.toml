@@ -1,0 +1,8 @@
+[[file]]
+hash = "7C4D8154285FA166277835810027AE5970AE388CF7A78209DDAC184880B46C8C"
+path="/local/fromarchive2.txt"
+sources=["{{SELF_ROOT}}/testarchive.zip:subfolder/file2.txt","{{SELF_ROOT}}/testarchive.tar.xz:/subfolder/file2.txt"]
+
+[[include]]
+config="{{SELF_ROOT}}/included2.toml" 
+hash = "E39EBACF6AEB3EF09731DB9B6DF607D7786E0EA795A039F88C284EBFB4B135A4"
