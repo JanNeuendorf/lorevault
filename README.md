@@ -22,11 +22,17 @@ To combat those problems, we can use
 While you can be pedantic, you do not have to be, so you can use this for simple templates as well.
 
 
-### Installation
+### Getting Started
 You can install lorevault using Cargo.
 ```bash
 cargo install --git https://github.com/JanNeuendorf/lorevault
 ```
+Then run
+```sh
+lorevault example
+```
+to get a file that demonstrates most of the syntax, or follow the rest of this tutorial.
+
 
 ### CLI
 
