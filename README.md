@@ -60,7 +60,7 @@ It could be a local file:
 type = "file"
 path = "/home/some_path/local_copy" # It must be an absolute path
 ```
-It could be a local or remote git-repo:
+It could be a commit to a local or remote git-repo:
 ```toml
 [[file.source]]
 type = "git"
