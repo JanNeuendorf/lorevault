@@ -37,7 +37,10 @@ fn main() {
             tags,
             no_confirm,
         } => sync_folder(output, file, tags, *no_confirm),
-        Commands::Check { file } => check(file),
+        Commands::Check {
+            file,
+            pedantic: pdedantic,
+        } => check(file, *pdedantic),
         Commands::Example {} => write_example_config(),
         Commands::Hash { file } => print_hash(file),
         Commands::Tags { file } => print_tags(file),
@@ -68,9 +71,13 @@ fn sync_folder(
     Ok(())
 }
 
-fn check(config_path: &str) -> Result<()> {
+fn check(config_path: &str, pedantic: bool) -> Result<()> {
     check_recursion(config_path)?;
+
     let conf = Config::from_general_path(config_path, true, None)?;
+    if pedantic && !conf.is_fully_hardened()? {
+        return Err(format_err!("There are files or inclusions without hashes!"));
+    }
     let number_of_sources = conf.get_all()?.iter().map(|f| &f.sources).flatten().count();
     let mut source_counter = 0;
     for file in conf.get_all()? {

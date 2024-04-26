@@ -83,6 +83,7 @@ test5:test_clean
     just error_contains "{{test_prefix}} sync testing/failure2.toml tmpfolder/" "relative path"
     just error_contains "{{test_prefix}} sync testing/failure3.toml tmpfolder/ -t inc" "two files for path included/main.rs"
     just error_contains "{{test_prefix}} sync testing/failure4.toml tmpfolder/" "Hash of loaded config"
+    just error_contains "{{test_prefix}} check -p testing/testconfig2.toml" "files or inclusions without hashes"
 # Test 6 checks that a file which is included from another config without a tag can be replaced by a local file
 test6:test_clean
     {{test_prefix}} sync testing/testconfig6.toml tmpfolder --no-confirm

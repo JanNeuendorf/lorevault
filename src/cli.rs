@@ -35,6 +35,13 @@ pub enum Commands {
     Check {
         #[arg(help = "Config file")]
         file: String,
+        #[arg(
+            short,
+            long,
+            default_value = "false",
+            help = "Fail if something does not have a hash"
+        )]
+        pedantic: bool,
     },
     #[command(about = "Writes out an example configuration file", alias = "init")]
     Example {},

@@ -231,6 +231,19 @@ impl Config {
         }
         vecset(taglists)
     }
+    pub fn is_fully_hardened(&self) -> Result<bool> {
+        for f in self.get_all()? {
+            if f.hash.is_none() {
+                return Ok(false);
+            }
+        }
+        for i in &self.inclusions {
+            if !i.is_fully_hardened()? {
+                return Ok(false);
+            }
+        }
+        return Ok(true);
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -296,6 +309,11 @@ impl Inclusion {
         }
 
         Ok(files)
+    }
+    pub fn is_fully_hardened(&self) -> Result<bool> {
+        let config =
+            Config::from_general_path(&self.config, false, self.hash.as_ref().map(|s| s.as_str()))?;
+        Ok(self.hash.is_some() && config.is_fully_hardened()?)
     }
 }
 
