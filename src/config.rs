@@ -115,6 +115,12 @@ impl Config {
             }
         };
         let toml_string = String::from_utf8(data)?;
+        if toml_string == include_str!("lorevault_example.toml") {
+            return Err(format_err!(
+                "The example must be modified to make it functional."
+            ));
+        }
+
         let conf: Self = toml::from_str(&toml_string)?;
         Ok(conf.set_variables(source)?)
     }
