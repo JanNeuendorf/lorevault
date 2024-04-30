@@ -36,18 +36,20 @@ impl MemFolder {
     pub fn write_to_folder(&self, out_path: &PathBuf) -> Result<()> {
         if out_path.exists() {
             if out_path.is_dir() {
-                fs::remove_dir_all(&out_path)?;
+                fs::remove_dir_all(&out_path).context(format!(
+                    "Could not remove the directory {}.",
+                    out_path.display()
+                ))?;
             } else {
                 return Err(format_err!(
                     "Path {} exists, but it is not a directory.",
-                    out_path.to_string_lossy()
+                    out_path.display()
                 ));
             }
         }
 
         for (subpath, content) in &self.0 {
             let mut target_path = out_path.clone();
-
             let subpath = format_subpath(subpath);
             target_path.push(subpath);
             let prefix = target_path.parent().context("Malformed path")?;

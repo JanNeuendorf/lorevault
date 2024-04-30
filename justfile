@@ -24,8 +24,9 @@ build: test
 install:
     cargo install --path="{{justfile_directory()}}"
 
-# This should result in a statically linked binary.
+# This should result in a statically linked binary. Sometimes musl builds fail the first time
 build_static: test
+    cargo build --release --target=x86_64-unknown-linux-musl --features=static
     cargo build --release --target=x86_64-unknown-linux-musl --features=static
 
 

@@ -9,6 +9,8 @@ use regex::Regex;
 pub struct Cli {
     #[command(subcommand)]
     pub command: Commands,
+    #[arg(short, long, default_value = "false",help="Show some additional debug information.")]
+    pub verbose: bool,
 }
 
 #[derive(Subcommand, Debug)]

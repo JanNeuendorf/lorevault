@@ -19,15 +19,30 @@ use std::{
     process::exit,
 };
 use tempfile::TempDir;
+use tracing::{info, Level};
+use tracing_subscriber::FmtSubscriber;
 use variables::*;
 
 pub static CACHEDIR: OnceCell<TempDir> = OnceCell::new();
 
 fn main() {
     let cli = Cli::parse();
+    if cli.verbose {
+        let subscriber = FmtSubscriber::builder()
+            .with_max_level(Level::TRACE)
+            .finish();
+        tracing::subscriber::set_global_default(subscriber)
+            .expect("Could not initialize output for verbose mode.");
+        info!("{:?}", &cli);
+    }
     match init_cache_dir() {
         Err(_) => yellow("Not using a cache directory."),
-        _ => {}
+        _ => {
+            info!(
+                "Cache directory {}",
+                CACHEDIR.get().expect("Cachedir lost").path().display()
+            );
+        }
     }
 
     let result = match &cli.command {
@@ -60,13 +75,24 @@ fn sync_folder(
 ) -> Result<()> {
     check_recursion(config_path)?;
     let conf = Config::from_general_path(config_path, true, None)?;
-    let reference = MemFolder::load_from_folder(output).unwrap_or(MemFolder::empty());
+    info!("Parsed config file");
+
+    let reference = match MemFolder::load_from_folder(output) {
+        Ok(r) => {
+            info!("Folder already exists. Loaded for reference");
+            r
+        }
+        Err(_) => {
+            info!("Folder could not be loaded from reference, starting from scratch");
+            MemFolder::empty()
+        }
+    };
     let memfolder = MemFolder::load_first_valid_with_ref(&conf, tags, &reference)?;
 
     if !no_confirm && output.exists() && !get_confirmation(output, memfolder.0.keys().count()) {
         return Err(format_err!("Folder overwrite not confirmed."));
     }
-
+    info!("Trying to create folder");
     memfolder.write_to_folder(output)?;
     Ok(())
 }
