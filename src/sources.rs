@@ -84,33 +84,6 @@ impl FileSource {
     }
 }
 
-pub fn fetch_first_valid(sources: &Vec<FileSource>, hash: &Option<String>) -> Result<Vec<u8>> {
-    for s in sources {
-        let result = s.fetch();
-
-        if result.is_ok() {
-            if hash.is_none() {
-                return result;
-            } else {
-                if hash.as_ref().expect("must be some")
-                    == &compute_hash(&result.as_ref().expect("ref must exist"))
-                {
-                    return result;
-                } else {
-                    red(format!("Invalid hash {:?}", &s));
-                }
-            }
-        } else {
-            red(format!(
-                "Invalid source {:?} \nError: {}",
-                &s,
-                result.err().expect("error branch")
-            ));
-        }
-    }
-    return Err(format_err!("No valid source in list."));
-}
-
 pub fn compute_hash(content: &Vec<u8>) -> String {
     let mut hasher = Sha3_256::new();
     hasher.update(content);

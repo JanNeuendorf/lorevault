@@ -1,5 +1,6 @@
 mod cli;
 mod config;
+mod edits;
 mod memfolder;
 mod sources;
 mod variables;
@@ -8,9 +9,10 @@ use clap::Parser;
 use cli::{get_confirmation, source_from_string_simple, Cli, Commands};
 use colored::*;
 use config::{check_recursion, Config, File};
+use edits::*;
 use memfolder::MemFolder;
 use once_cell::sync::OnceCell;
-use sources::{compute_hash, fetch_first_valid, format_subpath, is_url, FileSource};
+use sources::{compute_hash, format_subpath, is_url, FileSource};
 use std::{
     collections::HashMap,
     fs,

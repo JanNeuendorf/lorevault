@@ -23,10 +23,7 @@ impl MemFolder {
                     memfolder.0.insert(item.get_path().clone(), content.clone());
                 }
             } else {
-                memfolder.0.insert(
-                    item.get_path().clone(),
-                    fetch_first_valid(&item.sources, &item.hash)?,
-                );
+                memfolder.0.insert(item.get_path().clone(), item.get()?);
             }
         }
 

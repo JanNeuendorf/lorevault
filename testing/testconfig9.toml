@@ -1,0 +1,9 @@
+var.rust_git_commit="ea504e6bf11a23bb010b7b98a58a97ec2dcd0489"
+var.rust_git_repo="https://github.com/rust-lang/rustlings.git"
+
+[[file]]
+path="rustlings_readme.md"
+sources=["{{rust_git_repo}}#{{rust_git_commit}}:/README.md"]
+[[file.edit]]
+replace_from="a"
+to="b"

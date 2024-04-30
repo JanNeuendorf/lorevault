@@ -255,6 +255,8 @@ pub struct File {
     pub hash: Option<String>,
     #[serde(alias = "source")]
     pub sources: Vec<FileSource>,
+    #[serde(alias = "edit", default)]
+    pub edits: Vec<FileEdit>,
 }
 
 impl File {
@@ -280,6 +282,46 @@ impl File {
         }
         false
     }
+
+    pub fn get(&self) -> Result<Vec<u8>> {
+        let data = fetch_first_valid(&self.sources, &self.hash)?;
+        if self.edits.len() == 0 {
+            return Ok(data);
+        } else {
+            let mut strdata = String::from_utf8(data)?;
+            for edit in &self.edits {
+                strdata = edit.apply(&strdata)?;
+            }
+            return Ok(strdata.into_bytes());
+        }
+    }
+}
+
+fn fetch_first_valid(sources: &Vec<FileSource>, hash: &Option<String>) -> Result<Vec<u8>> {
+    for s in sources {
+        let result = s.fetch();
+
+        if result.is_ok() {
+            if hash.is_none() {
+                return result;
+            } else {
+                if hash.as_ref().expect("must be some")
+                    == &compute_hash(&result.as_ref().expect("ref must exist"))
+                {
+                    return result;
+                } else {
+                    red(format!("Invalid hash {:?}", &s));
+                }
+            }
+        } else {
+            red(format!(
+                "Invalid source {:?} \nError: {}",
+                &s,
+                result.err().expect("error branch")
+            ));
+        }
+    }
+    return Err(format_err!("No valid source in list."));
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -305,6 +347,7 @@ impl Inclusion {
                 tags: self.tags.clone(),
                 hash: original_file.hash,
                 sources: original_file.sources,
+                edits: original_file.edits,
             })
         }
 

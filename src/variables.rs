@@ -150,7 +150,8 @@ impl VariableCompletion for File {
     fn required_variables(&self) -> Result<Vec<String>> {
         let rb_path = self.path.required_variables()?;
         let rb_sources = self.sources.required_variables()?;
-        Ok(vecset(vec![rb_path, rb_sources]))
+        let rb_edits = self.edits.required_variables()?;
+        Ok(vecset(vec![rb_path, rb_sources, rb_edits]))
     }
     fn set_single_variable(&mut self, key: &str, value: &str) -> Result<Self> {
         Ok(File {
@@ -158,6 +159,7 @@ impl VariableCompletion for File {
             tags: self.tags.clone(),
             hash: self.hash.clone(),
             sources: self.sources.set_single_variable(key, value)?,
+            edits: self.edits.set_single_variable(key, value)?,
         })
     }
 }
@@ -186,6 +188,34 @@ impl VariableCompletion for Inclusion {
             with_tags: self.with_tags.clone(),
             hash: self.hash.clone(),
         })
+    }
+}
+impl VariableCompletion for FileEdit {
+    fn required_variables(&self) -> Result<Vec<String>> {
+        match self {
+            Self::Replace {
+                replace_from: from,
+                to,
+                ..
+            } => {
+                let rb_from = from.required_variables()?;
+                let rb_to = to.required_variables()?;
+                Ok(vecset(vec![rb_from, rb_to]))
+            }
+        }
+    }
+    fn set_single_variable(&mut self, key: &str, value: &str) -> Result<Self> {
+        match self {
+            Self::Replace {
+                replace_from: from,
+                to,
+                optional,
+            } => Ok(Self::Replace {
+                replace_from: from.set_single_variable(key, value)?,
+                to: to.set_single_variable(key, value)?,
+                optional: *optional,
+            }),
+        }
     }
 }
 
