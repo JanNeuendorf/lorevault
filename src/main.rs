@@ -27,7 +27,7 @@ pub static CACHEDIR: OnceCell<TempDir> = OnceCell::new();
 
 fn main() {
     let cli = Cli::parse();
-    if cli.verbose {
+    if cli.debug {
         let subscriber = FmtSubscriber::builder()
             .with_max_level(Level::TRACE)
             .finish();
