@@ -1,6 +1,6 @@
 [package]
 name = "lorevault"
-version = "0.8.0"
+version = "0.8.1"
 edition = "2021"
 authors = ["Jan Neuendorf"]
 description = "A simple program to create a directory from a recipe."
@@ -8,6 +8,7 @@ license="MIT"
 
 [dependencies]
 anyhow = "1.0.81"
+auth-git2 = "0.5.4"
 clap = { version = "4.5.4", features = ["derive"] }
 colored = "2.1.0"
 dialoguer = "0.11.0"

@@ -1,5 +1,6 @@
 use crate::*;
 
+use auth_git2::GitAuthenticator;
 use git2::{Oid, Repository};
 use serde::{Deserialize, Serialize};
 use sha3::{Digest, Sha3_256};
@@ -139,7 +140,9 @@ fn get_git_repo(repo_path: &str) -> Result<Repository> {
 }
 
 pub fn is_url(path: &str) -> bool {
-    path.to_string().starts_with("http://") || path.to_string().starts_with("https://")
+    path.to_string().starts_with("http://")
+        || path.to_string().starts_with("https://")
+        || path.contains("@")
 }
 
 fn cache_name(url: impl AsRef<str>) -> PathBuf {
@@ -147,8 +150,9 @@ fn cache_name(url: impl AsRef<str>) -> PathBuf {
 }
 
 fn clone_repository(repo_url: &str) -> Result<Repository> {
+    let auth = GitAuthenticator::default();
     if let Some(cachedir) = CACHEDIR.get() {
-        let repo_at_cache = git2::build::RepoBuilder::new().clone(
+        let repo_at_cache = auth.clone_repo(
             repo_url,
             cachedir.path().join(cache_name(repo_url)).as_path(),
         );
@@ -157,7 +161,7 @@ fn clone_repository(repo_url: &str) -> Result<Repository> {
             Err(_) => {
                 let temp_dir = TempDir::new()?;
                 yellow("Trying to write to existing cache directory");
-                git2::build::RepoBuilder::new().clone(repo_url, temp_dir.path())?
+                auth.clone_repo(repo_url, temp_dir.path())?
             }
         };
 
@@ -166,7 +170,7 @@ fn clone_repository(repo_url: &str) -> Result<Repository> {
         let temp_dir = TempDir::new()?;
         yellow("Cloning without caching.");
 
-        let repo = git2::build::RepoBuilder::new().clone(repo_url, temp_dir.path())?;
+        let repo = auth.clone_repo(repo_url, temp_dir.path())?;
 
         Ok(repo)
     }

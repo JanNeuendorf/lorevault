@@ -107,7 +107,7 @@ If the file's content is an utf8-encoded string, we can make small edits like th
 path = "my_dotfile.in"
 hash = "741C077E70E4869ADBC29CCC34B7935B58DDAC16A4B8007AC127181E2148F468"
 sources=["/some/path","repo#commit:path","/path/to/archive.tar.xz:file"]
-
+ 
 
 [[file.edit]]
 type="insert"
@@ -201,13 +201,18 @@ This means that if the directory was not changed and all hashes are set, nothing
 
 A temporary directory is used to store cloned git-repos. It lives for the time of the command and acts as a cache, so we do not need to clone from the same URL multiple times. 
 
+Authentication for cloning repos is handled by [auth-git2-rs](https://github.com/de-vri-es/auth-git2-rs) with default settings. When using ssh, the accepted pattern is:
+```toml
+sources=["git@github.com:User/repo.git#28ddb25786a7d300b08d1d996c4a6e8b604f5902:/file.txt"]
+```
+
 ### Limitations
 
 - It only works on Unix systems. (Only tested on Linux.)
 - The contents of the directory are created in memory, so very large files are to be avoided.
 - Every file must be named explicitly. There is no way to include entire directories.
 - There is no control over metadata/permissions.
-- There is no support for authentication when cloning a repo.
+
 
 ### Contributing 
 
