@@ -197,7 +197,7 @@ If it is referred to with a path, it is the current version in the directory.
 
 ### Details
 The directory is always deleted and recreated. This ensures that there are no subtle changes that can be missed. If it existed before, it is used as a reference. If a file has a defined hash and the file in the directory matches it, it can just be taken from there.
-This means that if the directory was not changed and all hashes are set, nothing needs to be cloned, downloaded or extracted from archives.
+This means that if the directory was not changed and all hashes are set, nothing needs to be cloned, downloaded or extracted from archives. This is no longer true when edits are used. 
 
 A temporary directory is used to store cloned git-repos. It lives for the time of the command and acts as a cache, so we do not need to clone from the same URL multiple times. 
 
@@ -205,6 +205,7 @@ Authentication for cloning repos is handled by [auth-git2-rs](https://github.com
 ```toml
 sources=["git@github.com:User/repo.git#28ddb25786a7d300b08d1d996c4a6e8b604f5902:/file.txt"]
 ```
+If and how the key is unlocked is up to the users machine. 
 
 ### Limitations
 
