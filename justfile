@@ -25,9 +25,11 @@ install:
     cargo install --path="{{justfile_directory()}}"
 
 # This should result in a statically linked binary. Sometimes musl builds fail the first time
-build_static: test
-    cargo build --release --target=x86_64-unknown-linux-musl --features=static
-    cargo build --release --target=x86_64-unknown-linux-musl --features=static
+build_musl: test
+    -cargo build --release --target=x86_64-unknown-linux-musl 
+    cargo build --release --target=x86_64-unknown-linux-musl 
+    just output_contains "ldd target/x86_64-unknown-linux-musl/release/lorevault" "statically linked"
+    
 
 
 # Test 1 uses a config that includes variables, tags and multiple sources. We then check, if the folder is created as expected.

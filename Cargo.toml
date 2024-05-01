@@ -1,6 +1,6 @@
 [package]
 name = "lorevault"
-version = "0.8.2"
+version = "0.8.3"
 edition = "2021"
 authors = ["Jan Neuendorf"]
 description = "A simple program to create a directory from a recipe."
@@ -14,7 +14,7 @@ colored = "2.1.0"
 dialoguer = "0.11.0"
 git2 = "0.18.3"
 once_cell = "1.19.0"
-openssl = { version = "0.10.64", features = ["vendored"],optional = true }
+openssl = { version = "0.10.64", features = ["vendored"],optional = false }
 regex = "1.10.4"
 reqwest = { version = "0.12.2", features = ["blocking", "json"] }
 serde = { version = "1.0.197", features = ["derive"] }
@@ -32,7 +32,3 @@ zip = "0.6.6"
 opt-level = 3
 strip = true 
 lto = true
-
-# By activating the vendored openssl crate, this can be statically linked.
-[features]
-static = ["openssl"]
