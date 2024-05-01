@@ -10,7 +10,7 @@
 # A Lorevault config specifies a list of files that can be synced to a local directory.
 
 # To avoid repetition, variables can be defined.
-var.author="your name"
+var.user="you"
 # See the README for predefined variables.
 
 [[file]]
@@ -38,9 +38,9 @@ tags = ["documentation"] # This file will only be in the directory, if the tag "
 type = "text"
 content = """
 ## Header
- This coud be a readme file. It was written by {{author}}.
+ This coud be a readme file. It was written by {{user}}.
 """
-# Here, a variable was used. "{{author}}" will be replaced with the name of the variable.
+# Here, a variable was used. "{{user}}" will be replaced with the name of the variable.
 ignore_variables=false # This is the default. If true, the text is protected from replacements.
 
 [[file]]
@@ -58,10 +58,28 @@ hash = "A000AE6EB9603F2FCEDD6CB9C370843DAB835E5AF80C81CA3A2D248D454629BC"
 type = "http"
 url = "https://www.website.jpg"
 
-# We can use the following shorthand notation:
+
 [[file]]
 path = "subdirectory/filename"
+# We can use the following shorthand notation:
 sources=["/some/path","repo#commit:path","/path/to/archive.tar:file"]
+
+# We can make an edit without requiring a local copy
+[[file.edit]]
+type="insert"
+content="# The document begins\n\n"
+position="start" # could be "end" or after a line number.
+
+[[file.edit]]
+type="replace"
+from="setting=false"
+to="setting=true"
+tags=["flip"] # Will be skipped if the tag is not active.
+
+[[file.edit]]
+type="delete"
+start=30 # line numbers (inclusive)
+end=100
 
 # We can include other config files.
 [[include]]

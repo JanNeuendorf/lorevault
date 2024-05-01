@@ -100,7 +100,7 @@ It will replace untagged files at the same path.
 ### Edits 
 We might want to include a file with a slight modification. 
 It would be unfortunate if we had to store the edited copy, especially if we have multiple sources for the original. 
-If the files content is an utf8-encoded string, we can make small edits like this:
+If the file's content is an utf8-encoded string, we can make small edits like this:
 
 ```toml
 [[file]]
@@ -126,7 +126,7 @@ start=30 # line numbers (inclusive)
 end=100
 
 ```
-The hash always refers to the hash **before** any edits are made. Line numbers are counted from 1. 
+The hash always refers to the hash before any edits are made. Line numbers are counted from 1. 
 Since the edited results can not be verified, using edits can lead to repeated cloning or decompressing.
 
 ### Variables
