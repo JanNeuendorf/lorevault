@@ -12,7 +12,8 @@ use config::{check_recursion, Config, File};
 use edits::*;
 use memfolder::MemFolder;
 use once_cell::sync::OnceCell;
-use sources::{compute_hash, format_subpath, is_url, FileSource};
+use regex::Regex;
+use sources::{compute_hash, format_subpath, is_url_or_ssh, FileSource};
 use std::{
     collections::HashMap,
     fs,

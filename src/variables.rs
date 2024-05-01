@@ -1,5 +1,4 @@
 use crate::*;
-use regex::Regex;
 use std::collections::HashSet;
 
 use self::config::Inclusion;

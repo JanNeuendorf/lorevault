@@ -121,7 +121,7 @@ fn get_git_file(commit_hash: &str, file_path: &PathBuf, repo_path: &str) -> Resu
 
 fn get_git_repo(repo_path: &str) -> Result<Repository> {
     let repo: Repository;
-    if is_url(repo_path) {
+    if is_url_or_ssh(repo_path) {
         repo = match fetch_repo_from_cache(repo_path) {
             Ok(r) => r,
             Err(_) => {
@@ -139,10 +139,11 @@ fn get_git_repo(repo_path: &str) -> Result<Repository> {
     Ok(repo)
 }
 
-pub fn is_url(path: &str) -> bool {
+pub fn is_url_or_ssh(path: &str) -> bool {
+    let ssh_regex = Regex::new(r"\b\S+@\S+:\S+\b").expect("Could not create regex pattern");
     path.to_string().starts_with("http://")
         || path.to_string().starts_with("https://")
-        || path.contains("@")
+        || ssh_regex.is_match(path)
 }
 
 fn cache_name(url: impl AsRef<str>) -> PathBuf {

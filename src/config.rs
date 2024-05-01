@@ -171,7 +171,7 @@ impl Config {
                         .context("Path must be printable")?
                         .to_string(),
                 );
-                let repostring = if is_url(&repo) {
+                let repostring = if is_url_or_ssh(&repo) {
                     repo.to_string()
                 } else {
                     let repopath = PathBuf::from(repo).canonicalize()?;
