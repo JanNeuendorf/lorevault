@@ -97,6 +97,38 @@ tags = ["tag1","tag2"]
 This file will only be in the directory if one of the tags is given. 
 It will replace untagged files at the same path.
 
+### Edits 
+We might want to include a file with a slight modification. 
+It would be unfortunate if we had to store the edited copy, especially if we have multiple sources for the original. 
+If the files content is an utf8-encoded string, we can make small edits like this:
+
+```toml
+[[file]]
+path = "my_dotfile.in"
+hash = "741C077E70E4869ADBC29CCC34B7935B58DDAC16A4B8007AC127181E2148F468"
+sources=["/some/path","repo#commit:path","/path/to/archive.tar.xz:file"]
+
+
+[[file.edit]]
+type="insert"
+content="# The document begins\n\n"
+position="start" # could be "end" or after a line number.
+
+[[file.edit]]
+type="replace"
+from="setting=false"
+to="setting=true"
+tags=["flip"] # Will be skipped if the tag is not active.
+
+[[file.edit]]
+type="delete"
+start=30 # line numbers (inclusive)
+end=100
+
+```
+The hash always refers to the hash **before** any edits are made. Line numbers are counted from 1. 
+Since the edited results can not be verified, using edits can lead to repeated cloning or decompressing.
+
 ### Variables
 To avoid repetition, variables can be set in the beginning of the file and used in the following way:
 ```toml
@@ -111,7 +143,8 @@ type = "text"
 content = "This file was written by {{user}}."
 ignore_variables=false # This is the default. If true, the text is protected.
 ```
-They can not be used inside hashes, tags or types.
+They can not be used inside hashes, tags, types or editing positions.
+
 
 
 ### Including Configs

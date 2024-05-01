@@ -1,9 +1,54 @@
 var.rust_git_commit="ea504e6bf11a23bb010b7b98a58a97ec2dcd0489"
 var.rust_git_repo="https://github.com/rust-lang/rustlings.git"
+var.new_name="ferris-creatures"
 
 [[file]]
 path="rustlings_readme.md"
 sources=["{{rust_git_repo}}#{{rust_git_commit}}:/README.md"]
 [[file.edit]]
-replace_from="a"
-to="b"
+type="replace"
+from="rustlings"
+to="{{new_name}}"
+ignore_variables=false
+
+[[file.edit]]
+type="insert"
+content="# The document begins\n\n"
+position="start"
+
+[[file.edit]]
+type="insert"
+content="RANDOM INTERLUDE!!!!"
+position=9
+
+
+[[file.edit]]
+type="delete"
+start=30
+end=100
+
+[[file.edit]]
+type="insert"
+content="\nIt looks like a tag has been set"
+tags=["append"]
+position="end"
+
+[[file]]
+path="unedited.md"
+sources=["{{rust_git_repo}}#{{rust_git_commit}}:/README.md"]
+
+[[file]]
+path="single_insert.md"
+sources=["{{rust_git_repo}}#{{rust_git_commit}}:/README.md"]
+[[file.edit]]
+type="insert"
+content="RANDOM INTERLUDE!!!!"
+position=9
+
+[[file]]
+path="single_deletion.md"
+sources=["{{rust_git_repo}}#{{rust_git_commit}}:/README.md"]
+[[file.edit]]
+type="delete"
+start=1
+end=20

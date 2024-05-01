@@ -20,10 +20,15 @@ impl MemFolder {
             {
                 let hash = compute_hash(content);
                 if &hash == reqhash {
-                    memfolder.0.insert(item.get_path().clone(), content.clone());
+                    memfolder.0.insert(
+                        item.get_path().clone(),
+                        item.from_reference_unchecked(content, tags)?,
+                    );
                 }
             } else {
-                memfolder.0.insert(item.get_path().clone(), item.get()?);
+                memfolder
+                    .0
+                    .insert(item.get_path().clone(), item.build(tags)?);
             }
         }
 

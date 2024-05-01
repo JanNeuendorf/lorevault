@@ -225,6 +225,9 @@ impl Config {
         let mut taglists = vec![];
         for file in &self.content {
             taglists.push(file.tags.clone().unwrap_or(vec![]));
+            for e in &file.edits {
+                taglists.push(e.get_tags().clone())
+            }
         }
         for inc in &self.inclusions {
             taglists.push(inc.tags.clone().unwrap_or(vec![]));
@@ -282,18 +285,23 @@ impl File {
         }
         false
     }
-
-    pub fn get(&self) -> Result<Vec<u8>> {
-        let data = fetch_first_valid(&self.sources, &self.hash)?;
+    pub fn from_reference_unchecked(&self, data: &Vec<u8>, tags: &Vec<String>) -> Result<Vec<u8>> {
         if self.edits.len() == 0 {
-            return Ok(data);
+            return Ok(data.clone());
         } else {
-            let mut strdata = String::from_utf8(data)?;
+            let mut strdata = String::from_utf8(data.clone())?;
             for edit in &self.edits {
+                if !edit.is_active(tags) {
+                    continue;
+                }
                 strdata = edit.apply(&strdata)?;
             }
             return Ok(strdata.into_bytes());
         }
+    }
+    pub fn build(&self, tags: &Vec<String>) -> Result<Vec<u8>> {
+        let data = fetch_first_valid(&self.sources, &self.hash)?;
+        self.from_reference_unchecked(&data, tags)
     }
 }
 
@@ -347,7 +355,7 @@ impl Inclusion {
                 tags: self.tags.clone(),
                 hash: original_file.hash,
                 sources: original_file.sources,
-                edits: original_file.edits,
+                edits: include_edits(&original_file.edits, &self.tags.clone().unwrap_or(vec![])),
             })
         }
 

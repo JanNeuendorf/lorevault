@@ -16,7 +16,7 @@ clean: test_clean
 
 test: fmt
     cargo test
-    just test1 test2 test3 test4 test5 test6 test7
+    just test1 test2 test3 test4 test5 test6 test7 test8 test9
 
 build: test 
     cargo build --release
@@ -101,6 +101,13 @@ test8:test_clean
     just error_contains "{{test_prefix}} check -p testing/testconfig2.toml" "files or inclusions without hashes"
     {{test_prefix}} check -p testing/testconfig8.toml
 
+# Test edits
+test9:test_clean
+    {{test_prefix}} sync testing/testconfig9.toml tmpfolder --no-confirm
+    just check_hash tmpfolder/rustlings_readme.md F0BC491EBBCA0BA3DF0F6E11CB9C2CA97EFAC84BA2A65C8AFADD0D045AD0B4DE
+    {{test_prefix}} sync testing/testconfig9.toml tmpfolder --no-confirm -t append
+    just check_hash tmpfolder/rustlings_readme.md 88C468F15606A5BD5EADA0F0475991A2FC01ACA8032BBC5A254CC74D6AA1274A
+
 # Check if a folder contains the expected number of items.
 count_folder folder expected:
     #!/usr/bin/env python3
@@ -120,4 +127,18 @@ error_contains command msg:
         print(result.stderr)
         exit(1)
 
+output_contains command msg:
+    #!/usr/bin/env python3
+    import subprocess
+    result = subprocess.run("{{command}}", shell=True, capture_output=True, text=True)
+    if (result.returncode!=0):
+        print("Command failed")
+        exit(1)
+    if ("{{msg}}" not in result.stdout):
+        print("Wrong eoutput:")
+        print(result.stdout)
+        exit(1)
+
+check_hash file hash:
+     just output_contains "{{test_prefix}} hash {{file}}" {{hash}}
            

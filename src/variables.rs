@@ -190,34 +190,6 @@ impl VariableCompletion for Inclusion {
         })
     }
 }
-impl VariableCompletion for FileEdit {
-    fn required_variables(&self) -> Result<Vec<String>> {
-        match self {
-            Self::Replace {
-                replace_from: from,
-                to,
-                ..
-            } => {
-                let rb_from = from.required_variables()?;
-                let rb_to = to.required_variables()?;
-                Ok(vecset(vec![rb_from, rb_to]))
-            }
-        }
-    }
-    fn set_single_variable(&mut self, key: &str, value: &str) -> Result<Self> {
-        match self {
-            Self::Replace {
-                replace_from: from,
-                to,
-                optional,
-            } => Ok(Self::Replace {
-                replace_from: from.set_single_variable(key, value)?,
-                to: to.set_single_variable(key, value)?,
-                optional: *optional,
-            }),
-        }
-    }
-}
 
 pub fn resolve_variable_inter_refs(
     vars_in: &HashMap<String, String>,
