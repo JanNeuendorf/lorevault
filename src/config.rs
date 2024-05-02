@@ -108,7 +108,7 @@ impl Config {
                 }
                 info!("Loading config from local file {}",path.display());
                 fs::read(path)
-                    .context(format!("Could not load config {}", path.to_string_lossy()))?
+                    .context(format!("Could not load config {}", path.display()))?
             }
             FileSource::Git { .. } => source.fetch()?,
             _ => {
@@ -189,14 +189,15 @@ impl Config {
                 );
             }
             FileSource::Local { path } => {
+                let parent=path
+                .canonicalize().context("Path to local config could not be converted to absolute path.")?.
+                parent().context("A local config must have a parent dir.")?
+                .to_str()
+                .context("Could not parse the config path to string.")?
+                .to_string();
                 vars.insert(
                     "SELF_PARENT".to_string(),
-                    path.parent()
-                        .context("A local config must have a parent dir.")?
-                        .canonicalize()?
-                        .to_str()
-                        .context("Could not parse the config path to string.")?
-                        .to_string(),
+                    parent
                 );
                 vars.insert(
                     "SELF_ROOT".to_string(),
@@ -394,6 +395,7 @@ pub fn check_recursion(cfg: &str) -> Result<()> {
     for i in 0..INCLUSION_RECURSION_LIMIT {
         info!("Looking for recursions {} levels deep",i);
         next_deps = get_next_inclusion_level(&next_deps)?;
+        info!("Found {} dependencies.",next_deps.len());
         if next_deps.len() == 0 {
             return Ok(());
         }
