@@ -76,7 +76,10 @@ fn sync_folder(
     tags: &Vec<String>,
     no_confirm: bool,
 ) -> Result<()> {
+    info!("Want to load config from {:?}",cli::source_from_string_simple(config_path));
+    info!("Checking for recursion");
     check_recursion(config_path)?;
+    info!("No recursion found");
     let conf = Config::from_general_path(config_path, true, None)?;
     info!("Parsed config file");
 

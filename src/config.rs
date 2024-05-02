@@ -106,6 +106,7 @@ impl Config {
                         path
                     ));
                 }
+                info!("Loading config from local file {}",path.display());
                 fs::read(path)
                     .context(format!("Could not load config {}", path.to_string_lossy()))?
             }
@@ -138,6 +139,7 @@ impl Config {
         hash: Option<&str>,
     ) -> Result<Self> {
         let source = cli::source_from_string_simple(general_path)?;
+        info!("Loading config from source {:?}",source);
         Self::from_filesource(&source, allow_local, hash)
     }
     #[allow(unused)]
@@ -389,7 +391,8 @@ fn get_next_inclusion_level(cfgs: &Vec<String>) -> Result<Vec<String>> {
 // It must be manually called and checked before loading the config file.
 pub fn check_recursion(cfg: &str) -> Result<()> {
     let mut next_deps = vec![cfg.to_string()];
-    for _ in 0..INCLUSION_RECURSION_LIMIT {
+    for i in 0..INCLUSION_RECURSION_LIMIT {
+        info!("Looking for recursions {} levels deep",i);
         next_deps = get_next_inclusion_level(&next_deps)?;
         if next_deps.len() == 0 {
             return Ok(());

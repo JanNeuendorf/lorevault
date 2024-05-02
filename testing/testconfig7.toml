@@ -7,6 +7,5 @@ more_complex_var="{{complex_var}}/subsubfolder" # testing vars referencing other
 [[file]]
 path="{{more_complex_var}}/file.txt"
 [[file.source]]
-type="text"
 content="The value of my_var in double brackets {{{{my_var}}}}"
 
