@@ -106,9 +106,8 @@ impl Config {
                         path
                     ));
                 }
-                info!("Loading config from local file {}",path.display());
-                fs::read(path)
-                    .context(format!("Could not load config {}", path.display()))?
+                info!("Loading config from local file {}", path.display());
+                fs::read(path).context(format!("Could not load config {}", path.display()))?
             }
             FileSource::Git { .. } => source.fetch()?,
             _ => {
@@ -139,7 +138,7 @@ impl Config {
         hash: Option<&str>,
     ) -> Result<Self> {
         let source = cli::source_from_string_simple(general_path)?;
-        info!("Loading config from source {:?}",source);
+        info!("Loading config from source {:?}", source);
         Self::from_filesource(&source, allow_local, hash)
     }
     #[allow(unused)]
@@ -189,16 +188,15 @@ impl Config {
                 );
             }
             FileSource::Local { path } => {
-                let parent=path
-                .canonicalize().context("Path to local config could not be converted to absolute path.")?.
-                parent().context("A local config must have a parent dir.")?
-                .to_str()
-                .context("Could not parse the config path to string.")?
-                .to_string();
-                vars.insert(
-                    "SELF_PARENT".to_string(),
-                    parent
-                );
+                let parent = path
+                    .canonicalize()
+                    .context("Path to local config could not be converted to absolute path.")?
+                    .parent()
+                    .context("A local config must have a parent dir.")?
+                    .to_str()
+                    .context("Could not parse the config path to string.")?
+                    .to_string();
+                vars.insert("SELF_PARENT".to_string(), parent);
                 vars.insert(
                     "SELF_ROOT".to_string(),
                     vars.get("SELF_PARENT").expect("just set").clone(),
@@ -215,6 +213,7 @@ impl Config {
             _ => {}
         }
         vars = resolve_variable_inter_refs(&vars)?;
+        info!("Variables in {:?}: {:?} ", source, vars);
         new.content = new.content.set_variables(&vars)?;
         new.inclusions = new.inclusions.set_variables(&vars)?;
         Ok(Self {
@@ -393,9 +392,9 @@ fn get_next_inclusion_level(cfgs: &Vec<String>) -> Result<Vec<String>> {
 pub fn check_recursion(cfg: &str) -> Result<()> {
     let mut next_deps = vec![cfg.to_string()];
     for i in 0..INCLUSION_RECURSION_LIMIT {
-        info!("Looking for recursions {} levels deep",i);
+        info!("Looking for recursions {} levels deep", i);
         next_deps = get_next_inclusion_level(&next_deps)?;
-        info!("Found {} dependencies.",next_deps.len());
+        info!("Found {} dependencies.", next_deps.len());
         if next_deps.len() == 0 {
             return Ok(());
         }
