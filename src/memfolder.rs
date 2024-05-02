@@ -49,6 +49,8 @@ impl MemFolder {
                 ));
             }
         }
+        fs::create_dir(out_path)
+            .context("Could not create output folder. Maybe its parent does not exist?")?;
 
         for (subpath, content) in &self.0 {
             let mut target_path = out_path.clone();
