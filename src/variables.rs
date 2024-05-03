@@ -66,7 +66,11 @@ impl VariableCompletion for FileSource {
                 Ok(vecset(vec![rb_archive, rb_path]))
             }
             FileSource::Download { url } => url.clone().required_variables(),
-            FileSource::Git { repo, commit, path } => {
+            FileSource::Git {
+                repo,
+                id: commit,
+                path,
+            } => {
                 let rb_path = path.to_owned().required_variables()?;
                 let rb_repo = repo.to_owned().required_variables()?;
                 let rb_commit = commit.to_owned().required_variables()?;
@@ -95,9 +99,13 @@ impl VariableCompletion for FileSource {
             FileSource::Download { url } => FileSource::Download {
                 url: url.set_single_variable(key, value)?,
             },
-            FileSource::Git { repo, commit, path } => FileSource::Git {
+            FileSource::Git {
+                repo,
+                id: commit,
+                path,
+            } => FileSource::Git {
                 repo: repo.set_single_variable(key, value)?,
-                commit: commit.set_single_variable(key, value)?,
+                id: commit.set_single_variable(key, value)?,
                 path: path.set_single_variable(key, value)?,
             },
             FileSource::Local { path } => FileSource::Local {

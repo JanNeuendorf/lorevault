@@ -1,7 +1,6 @@
 use crate::*;
 use clap::{Parser, Subcommand};
 use dialoguer::Confirm;
-use regex::Regex;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about =Some("Make a directory reproducible by specifying its contents in a file."))]
@@ -22,7 +21,7 @@ pub struct Cli {
 pub enum Commands {
     #[command(about = "Sync to a specified directory")]
     Sync {
-        #[arg(help = "Config file", long_help = "Supports repo#commit:path")]
+        #[arg(help = "Config file", long_help = "Supports repo#id:path")]
         file: String,
         #[arg(help = "Destination directory")]
         output: PathBuf,
@@ -64,26 +63,26 @@ pub enum Commands {
     },
 }
 
-// A "general_path" is a string that might be a path or repo#commit:subpath
+// A "general_path" is a string that might be a path or repo#id:subpath
 fn is_repo(general_path: &str) -> bool {
-    let re = Regex::new(r".*#[0-9a-fA-F]{7,40}:.*").expect("regular expression pattern invalid");
-    re.is_match(general_path)
+    general_path.contains('#') && general_path.contains(':')
 }
 
-// Gets (repo,commit,subpath) from a general path
-fn extract_components(s: &str) -> Option<(String, String, String)> {
-    let re =
-        Regex::new(r"(.*?)#([0-9a-fA-F]{7,40}):(.*)").expect("regular expression pattern invalid");
-
-    if let Some(captures) = re.captures(s) {
-        let before_hash = captures.get(1)?.as_str().trim().to_string();
-        let hash = captures.get(2)?.as_str().trim().to_string();
-        let after_hash = captures.get(3)?.as_str().trim().to_string();
-
-        Some((before_hash, hash, after_hash))
-    } else {
-        None
+// Gets (repo,id,subpath) from a general path
+// This does not work if the id itself contains a colon.
+fn extract_components(s: &str) -> Option<(&str, &str, &str)> {
+    let index_of_last_hash = s.chars().enumerate().filter(|(_i, c)| *c == '#').last()?.0;
+    let index_of_last_colon = s.chars().enumerate().filter(|(_i, c)| *c == ':').last()?.0;
+    if index_of_last_hash + 1 >= index_of_last_colon {
+        return None;
     }
+    if index_of_last_colon + 1 >= s.len() {
+        return None;
+    }
+    let repo = &s[0..index_of_last_hash];
+    let id = &s[index_of_last_hash + 1..index_of_last_colon];
+    let path = &s[index_of_last_colon + 1..];
+    Some((repo, id, path))
 }
 
 // Takes a general path and tries to parse it into a filesource.
@@ -94,7 +93,7 @@ pub fn source_from_string_simple(general_path: &str) -> Result<sources::FileSour
         match extract_components(general_path) {
             Some((repo, commit, path)) => Ok(sources::FileSource::Git {
                 repo: repo.into(),
-                commit: commit.into(),
+                id: commit.into(),
                 path: path.into(),
             }),
             None => Err(format_err!(format!(
@@ -153,5 +152,10 @@ mod test {
         Some(("https://github.com/some/repo.git".into(),"fb17a46eb92e8d779e57a10589e9012e9aa5f948".into(),"local/path.txt".into())));
         assert!(!is_repo("https://github.com/some/repo.git:local/path.txt"));
         assert!(!is_repo("/home/somefile.toml"));
+        assert_eq!(
+            extract_components("internet://adress#hash#release:tag:/path.txt"),
+            Some(("internet://adress#hash", "release:tag", "/path.txt".into()))
+        );
+        assert_eq!(extract_components("r#t:p"), Some(("r", "t", "p".into())));
     }
 }

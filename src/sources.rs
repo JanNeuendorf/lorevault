@@ -1,3 +1,5 @@
+use std::fmt::{self};
+
 use crate::*;
 
 use auth_git2::GitAuthenticator;
@@ -15,12 +17,12 @@ use zip::read::ZipArchive;
 pub enum FileSource {
     #[serde(rename = "file", alias = "local")]
     Local { path: PathBuf },
-    #[serde(rename = "http", alias = "url")]
+    #[serde(rename = "http")]
     Download { url: String },
     #[serde(rename = "git")]
     Git {
         repo: String,
-        commit: String,
+        id: String,
         path: PathBuf,
     },
     #[serde(rename = "text")]
@@ -34,6 +36,22 @@ pub enum FileSource {
     #[serde(untagged)]
     Auto(String),
 }
+
+impl fmt::Display for FileSource {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            FileSource::Local { path } => write!(f, "{}", path.display()),
+            FileSource::Download { url } => write!(f, "{}", url),
+            FileSource::Git { repo, id, path } => write!(f, "{}#{}:{}", repo, id, path.display()),
+            FileSource::Text { .. } => write!(f, "Custom text"),
+            FileSource::Archive { archive, path } => {
+                write!(f, "{}:{}", archive.display(), path.display())
+            }
+            FileSource::Auto(a) => write!(f, "{}", a),
+        }
+    }
+}
+
 impl FileSource {
     pub fn fetch(&self) -> Result<Vec<u8>> {
         match self {
@@ -55,7 +73,11 @@ impl FileSource {
                 let bytes = response.error_for_status()?.bytes()?.to_vec();
                 Ok(bytes)
             }
-            FileSource::Git { repo, commit, path } => get_git_file(commit, path, repo),
+            FileSource::Git {
+                repo,
+                id: commit,
+                path,
+            } => get_git_file(commit, path, repo),
             FileSource::Text { content, .. } => Ok(content.clone().into_bytes()),
             FileSource::Archive { archive, path } => {
                 if archive.is_relative() {
@@ -98,10 +120,11 @@ pub fn compute_hash(content: &Vec<u8>) -> String {
     return hex_string;
 }
 
-fn get_git_file(commit_hash: &str, file_path: &PathBuf, repo_path: &str) -> Result<Vec<u8>> {
+fn get_git_file(id: &str, file_path: &PathBuf, repo_path: &str) -> Result<Vec<u8>> {
     let repo = get_git_repo(repo_path)?;
+    let commit_hash = get_commit_from_string(&repo, id)?;
 
-    let commit = repo.find_commit(Oid::from_str(commit_hash)?)?;
+    let commit = repo.find_commit(Oid::from_str(&commit_hash)?)?;
     let tree = commit.tree()?;
 
     let blob = tree
@@ -117,6 +140,19 @@ fn get_git_file(commit_hash: &str, file_path: &PathBuf, repo_path: &str) -> Resu
             file_path.to_string_lossy()
         ))
     }
+}
+
+fn get_commit_from_string(repo: &Repository, input: &str) -> Result<String> {
+    let obj = repo
+        .revparse_single(input.trim())
+        .context(format!("Could not find commit for id: {}", input))?;
+    if let Some(commit) = obj.as_commit() {
+        let commit_string = commit.id().to_string();
+        info!("ID {} matched to commit {}", input, commit_string);
+        return Ok(commit_string);
+    }
+
+    Err(format_err!("Could not find commit for id: {}", input))
 }
 
 fn get_git_repo(repo_path: &str) -> Result<Repository> {
@@ -140,10 +176,9 @@ fn get_git_repo(repo_path: &str) -> Result<Repository> {
 }
 
 pub fn is_url_or_ssh(path: &str) -> bool {
-    let ssh_regex = Regex::new(r"\b\S+@\S+:\S+\b").expect("Could not create regex pattern");
     path.to_string().starts_with("http://")
         || path.to_string().starts_with("https://")
-        || ssh_regex.is_match(path)
+        || (path.contains('@') && path.contains(':'))
 }
 
 fn cache_name(url: impl AsRef<str>) -> PathBuf {
@@ -313,7 +348,7 @@ mod test {
             parse_auto_source("repo#eaf33129cdee0501af69c04c8d4068c5bf6cbfe1:path").unwrap(),
             FileSource::Git {
                 repo: "repo".to_string(),
-                commit: "eaf33129cdee0501af69c04c8d4068c5bf6cbfe1".to_string(),
+                id: "eaf33129cdee0501af69c04c8d4068c5bf6cbfe1".to_string(),
                 path: PathBuf::from("path")
             }
         );

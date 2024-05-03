@@ -27,7 +27,7 @@ path = "/path/to/local/copy" # It must be an absolute path
 [[file.source]] # A remote or local git-repo with a specified commit
 type = "git"
 repo = "https://github.com/some_repo.git"
-commit = "fb17a46eb92e8d779e57a10589e9012e9aa5f948"
+id = "fb17a46eb92e8d779e57a10589e9012e9aa5f948"
 path = "path/in/repo"
 
 [[file]] 
@@ -62,7 +62,7 @@ url = "https://www.website.jpg"
 [[file]]
 path = "subdirectory/filename"
 # We can use the following shorthand notation:
-sources=["/some/path","repo#commit:path","/path/to/archive.tar:file"]
+sources=["/some/path","repo#id:path","/path/to/archive.tar:file"]
 
 # We can make an edit without requiring a local copy
 [[file.edit]]
@@ -83,7 +83,7 @@ end=100
 
 # We can include other config files.
 [[include]]
-config="/path/to/included.toml" # Must be absolute. Can be repo#commit:path
+config="/path/to/included.toml" # Must be absolute. Can be repo#id:path
 subdir="files/go/here" # Defaults to directory root.
 required_tags=["tag1"] # If not set, the file will not be included.
 with_tags=["tag2"] # Will be passed to the other file.

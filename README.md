@@ -45,7 +45,7 @@ If the directory already exists, it is restored to the prescribed state with min
 
 Other subcommands are `check`, to see which sources are valid, `example` to write out a configuration file, `tags` to list the available tags, `list` to list the files that would be created, and `hash` to get the SHA3-256 of a file.
 
-The configuration file can be read in from a local or remote git-repo with the syntax `repo#commit:path`.
+The configuration file can be read in from a local or remote git-repo with the syntax `repo#id:path`.
 
 ### Config File
 The config file is a `.toml` file that consists of a list of file descriptions. 
@@ -71,9 +71,10 @@ It could be a commit to a local or remote git-repo:
 [[file.source]]
 type = "git"
 repo = "https://github.com/some_repo.git"
-commit = "fb17a46eb92e8d779e57a10589e9012e9aa5f948"
+id = "fb17a46eb92e8d779e57a10589e9012e9aa5f948"
 path = "path/in/repo"
 ```
+The ID can be a tag or the name of a branch. 
 Other supported sources are text, URLs and files in archives.
 Whole directories and symbolic links are not supported. 
 
@@ -81,7 +82,7 @@ When using an inline table, we can use the following notation:
 ```toml
 [[file]]
 path = "subdir/my_file"
-sources=["/some/path","repo#commit:path","/path/to/archive.tar.xz:file"]
+sources=["/some/path","repo#id:path","/path/to/archive.tar.xz:file"]
 ```
 The strings are then parsed into other sources. Only local files, archives and git-repos are supported.
 
@@ -106,7 +107,7 @@ If the file's content is an utf8-encoded string, we can make small edits like th
 [[file]]
 path = "my_dotfile.in"
 hash = "741C077E70E4869ADBC29CCC34B7935B58DDAC16A4B8007AC127181E2148F468"
-sources=["/some/path","repo#commit:path","/path/to/archive.tar.xz:file"]
+sources=["/some/path","repo#id:path","/path/to/archive.tar.xz:file"]
  
 
 [[file.edit]]
@@ -151,7 +152,7 @@ They can not be used inside hashes, tags, types or editing positions.
 We can include other configuration files. 
 ```toml
 [[include]]
-config="/path/to/included.toml" # Can be repo#commit:path
+config="/path/to/included.toml" # Can be repo#id:path
 subdir="files/go/here" # Defaults to directory root.
 required_tags=["tag1"] # If not set, the file will not be included.
 with_tags=["tag2"] # Will be passed to the other file.
@@ -169,9 +170,9 @@ This is especially true, if the config is inside a git-repo.
 
 For this, we can use build-in variables.
 If the config file is read from a git-repo, the variables 
-`SELF_REPO` and `SELF_COMMIT` are set automatically.
+`SELF_REPO` and `SELF_ID` are set automatically.
 If it is a local file, `SELF_PARENT` is set.
-`SELF_ROOT` gives either `repo#commit:` or the parent directory. 
+`SELF_ROOT` gives either `repo#id:` or the parent directory. 
 
 It is therefore a good convention to put the config file in the root of the project, regardless of whether the project is a git-repo or just a local directory. 
 
@@ -205,7 +206,7 @@ Authentication for cloning repos is handled by [auth-git2-rs](https://github.com
 ```toml
 sources=["git@github.com:User/repo.git#28ddb25786a7d300b08d1d996c4a6e8b604f5902:/file.txt"]
 ```
-If and how the key is unlocked is up to the users machine. 
+If and how the key is unlocked is up to the user's machine. 
 
 ### Limitations
 

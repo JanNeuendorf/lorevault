@@ -161,8 +161,12 @@ impl Config {
 
         let mut vars = self.variables.clone();
         match source {
-            FileSource::Git { repo, commit, path } => {
-                vars.insert("SELF_COMMIT".to_string(), commit.to_string());
+            FileSource::Git {
+                repo,
+                id: commit,
+                path,
+            } => {
+                vars.insert("SELF_ID".to_string(), commit.to_string());
                 vars.insert("SELF_REPO".to_string(), repo.to_string());
                 vars.insert(
                     "SELF_NAME".to_string(),

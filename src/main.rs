@@ -22,10 +22,10 @@ use std::{
     process::exit,
 };
 use tempfile::TempDir;
+use termion::terminal_size;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
 use variables::*;
-
 pub static CACHEDIR: OnceCell<TempDir> = OnceCell::new();
 
 fn main() {
@@ -118,6 +118,7 @@ fn check(config_path: &str, pedantic: bool) -> Result<()> {
     let number_of_sources = conf.get_all()?.iter().map(|f| &f.sources).flatten().count();
     let mut source_counter = 0;
     for file in conf.get_all()? {
+        break_line();
         if file.hash.is_none() {
             yellow(format!(
                 "No hash for {}",
@@ -125,10 +126,11 @@ fn check(config_path: &str, pedantic: bool) -> Result<()> {
             ));
         } else {
             neutral(format!(
-                "working on {}",
+                "Working on {}",
                 display_filename(file.get_path(), &file.get_tags())
             ));
         }
+        break_line();
         let mut working_hash = file.hash.clone();
         let mut misses = 0;
         for source in &file.sources {
@@ -148,13 +150,13 @@ fn check(config_path: &str, pedantic: bool) -> Result<()> {
                         None => working_hash = Some(current_hash),
                     }
                     green(format!(
-                        "Checked {}/{} : {:?}",
+                        "Checked {}/{} : {}",
                         source_counter, number_of_sources, source
                     ));
                 }
                 Err(e) => {
                     yellow(format!(
-                        "Failed {}/{} : {:?}",
+                        "Failed {}/{} : {}",
                         source_counter, number_of_sources, source
                     ));
                     yellow(format!("{}", e));
@@ -199,9 +201,11 @@ fn print_hash(path: &str) -> Result<()> {
 fn print_tags(configpath: &str) -> Result<()> {
     check_recursion(configpath)?;
     let config = Config::from_general_path(configpath, true, None)?;
+    break_line();
     for tag in &config.tags() {
         neutral(format!("- {}", tag));
     }
+    break_line();
     Ok(())
 }
 
@@ -224,9 +228,11 @@ fn print_list(configpath: &str, tags: &Vec<String>) -> Result<()> {
         }
         a_components.len().cmp(&b_components.len())
     });
+    break_line();
     for path in active_paths {
-        neutral(format!("{}", path.display()));
+        neutral(format!("- {}", path.display()));
     }
+    break_line();
     Ok(())
 }
 
@@ -250,6 +256,18 @@ pub fn green(message: impl AsRef<str>) {
 }
 pub fn neutral(message: impl AsRef<str>) {
     println!("{}", message.as_ref());
+}
+pub fn break_line() {
+    let columns = match terminal_size() {
+        Ok((c, _)) => c,
+        _ => 5,
+    };
+    println!(
+        "{}",
+        std::iter::repeat('-')
+            .take(columns as usize)
+            .collect::<String>()
+    );
 }
 
 #[cfg(test)]
