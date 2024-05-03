@@ -91,9 +91,9 @@ fn extract_components(s: &str) -> Option<(&str, &str, &str)> {
 pub fn source_from_string_simple(general_path: &str) -> Result<sources::FileSource> {
     if is_repo(general_path) {
         match extract_components(general_path) {
-            Some((repo, commit, path)) => Ok(sources::FileSource::Git {
+            Some((repo, id, path)) => Ok(sources::FileSource::Git {
                 repo: repo.into(),
-                id: commit.into(),
+                id: id.into(),
                 path: path.into(),
             }),
             None => Err(format_err!(format!(

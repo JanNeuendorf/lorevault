@@ -161,7 +161,7 @@ fn get_git_repo(repo_path: &str) -> Result<Repository> {
         repo = match fetch_repo_from_cache(repo_path) {
             Ok(r) => r,
             Err(_) => {
-                green(format!("Cloning {}", repo_path));
+                neutral(format!("Cloning {}", repo_path));
                 clone_repository(repo_path)?
             }
         };
@@ -267,6 +267,7 @@ fn extract_file_from_tar(archive_path: &PathBuf, file_path: &PathBuf) -> Result<
 fn extract_file_from_xz_tar(archive_path: &PathBuf, file_path: &PathBuf) -> Result<Vec<u8>> {
     let file = fs::File::open(archive_path)?;
     let mut xz = XzDecoder::new(file);
+    neutral(format!("Decompressing {}",archive_path.display()));
 
     let mut buf = Vec::new();
     xz.read_to_end(&mut buf)?;

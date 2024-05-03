@@ -163,10 +163,10 @@ impl Config {
         match source {
             FileSource::Git {
                 repo,
-                id: commit,
+                id,
                 path,
             } => {
-                vars.insert("SELF_ID".to_string(), commit.to_string());
+                vars.insert("SELF_ID".to_string(), id.to_string());
                 vars.insert("SELF_REPO".to_string(), repo.to_string());
                 vars.insert(
                     "SELF_NAME".to_string(),
@@ -188,7 +188,7 @@ impl Config {
 
                 vars.insert(
                     "SELF_ROOT".to_string(),
-                    format!("{}#{}:", repostring, commit),
+                    format!("{}#{}:", repostring, id),
                 );
             }
             FileSource::Local { path } => {
