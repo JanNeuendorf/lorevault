@@ -1,8 +1,0 @@
-# This should sync, but the check should fail.
-
-[[file]]
-hash = "7C4D8154285FA166277835810027AE5970AE388CF7A78209DDAC184880B46C8C"
-path="/subfolder/fromarchive2.txt"
-#The second source is valid, but points to the wrong file with a different hash
-sources=["{{SELF_ROOT}}/testarchive.zip:subfolder/file2.txt","{{SELF_ROOT}}/testarchive.tar.xz:file1.txt"]
-

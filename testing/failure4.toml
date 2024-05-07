@@ -1,6 +1,6 @@
 
-[[include]]
-config="{{SELF_ROOT}}/included1.toml"
-with_tags=["main"]
-hash="wronghash"
+[[directory]]
+path="local"
+sources=["{{SELF_ROOT}}/testfolder"]
+count=5 # This is wrong
 

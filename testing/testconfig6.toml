@@ -1,8 +1,0 @@
-[[include]]
-config="{{SELF_ROOT}}/included1.toml"
-with_tags=["main"]
-
-[[file]]
-path="included/main.rs"
-sources=["{{SELF_ROOT}}/../src/cli.rs"]
-tags=["overwrite"]

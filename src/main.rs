@@ -1,35 +1,67 @@
+//External dependencies
+//------------------------------------------------------------
+use anyhow::{format_err, Context, Error, Result};
+use auth_git2::GitAuthenticator;
+use clap::{Parser, Subcommand};
+use colored::*;
+use dialoguer::Confirm;
+use git2::{Oid, Repository};
+use indicatif::{ProgressBar, ProgressStyle};
+use once_cell::sync::OnceCell;
+use regex::Regex;
+use serde::{Deserialize, Serialize};
+use serde_with::serde_as;
+use sha3::{Digest, Sha3_256};
+use std::{
+    collections::{HashMap, HashSet},
+    fmt, fs,
+    path::PathBuf,
+    process::exit,
+    time::Duration,
+};
+use tempfile::TempDir;
+use termion::terminal_size;
+// Tracing is only used with the debug feature
+#[cfg(feature = "debug")]
+use tracing::Level;
+#[cfg(feature = "debug")]
+use tracing_subscriber::FmtSubscriber;
+//------------------------------------------------------------
+//Internal dependencies
+//------------------------------------------------------------
 mod cli;
 mod config;
+mod directories;
 mod edits;
 mod memfolder;
 mod sources;
 mod variables;
-use anyhow::{format_err, Context, Error, Result};
-use clap::Parser;
-use cli::{get_confirmation, source_from_string_simple, Cli, Commands};
-use colored::*;
-use config::{check_recursion, Config, File};
+use cli::*;
+use config::{check_recursion, Config, File, Inclusion};
+use directories::*;
 use edits::*;
 use memfolder::MemFolder;
-use once_cell::sync::OnceCell;
-use regex::Regex;
-use sources::{compute_hash, format_subpath, is_url_or_ssh, FileSource};
-use std::{
-    collections::HashMap,
-    fs,
-    io::{Cursor, Read},
-    path::PathBuf,
-    process::exit,
-};
-use tempfile::TempDir;
-use termion::terminal_size;
-use tracing::{info, Level};
-use tracing_subscriber::FmtSubscriber;
+use sources::*;
 use variables::*;
+//------------------------------------------------------------
+//constants
+//------------------------------------------------------------
 pub static CACHEDIR: OnceCell<TempDir> = OnceCell::new();
+const INCLUSION_RECURSION_LIMIT: usize = 10; // The depth of inclusions of other config files.
+                                             //------------------------------------------------------------
+
+//info!() does nothing if --features=debug is not active.
+#[macro_export]
+macro_rules! info {
+    ($($arg:tt)*) => {{
+        #[cfg(feature = "debug")]
+        tracing::info!($($arg)*);
+    }};
+}
 
 fn main() {
     let cli = Cli::parse();
+    #[cfg(feature = "debug")]
     if cli.debug {
         let subscriber = FmtSubscriber::builder()
             .with_max_level(Level::TRACE)
@@ -37,15 +69,6 @@ fn main() {
         tracing::subscriber::set_global_default(subscriber)
             .expect("Could not initialize output for verbose mode.");
         info!("{:?}", &cli);
-    }
-    match init_cache_dir() {
-        Err(_) => yellow("Not using a cache directory."),
-        _ => {
-            info!(
-                "Cache directory {}",
-                CACHEDIR.get().expect("Cachedir lost").path().display()
-            );
-        }
     }
 
     let result = match &cli.command {
@@ -55,15 +78,14 @@ fn main() {
             tags,
             no_confirm,
         } => sync_folder(output, file, tags, *no_confirm),
-        Commands::Check {
-            file,
-            pedantic: pdedantic,
-        } => check(file, *pdedantic),
         Commands::Example {} => write_example_config(),
         Commands::Hash { file } => print_hash(file),
         Commands::Tags { file } => print_tags(file),
         Commands::List { file, tags } => print_list(file, tags),
     };
+    if let Err(_) = clean_cache_dir() {
+        yellow("Cache directory could not be cleaned up");
+    }
     if let Err(e) = result {
         red(format!("Error: {}", e));
         exit(1)
@@ -85,20 +107,10 @@ fn sync_folder(
     info!("Checking for recursion");
     check_recursion(config_path)?;
     info!("No recursion found");
-    let conf = Config::from_general_path(config_path, true, None)?;
+    let conf = Config::from_general_path(config_path, true, None, true)?;
     info!("Parsed config file");
 
-    let reference = match MemFolder::load_from_folder(output) {
-        Ok(r) => {
-            info!("Folder already exists. Loaded for reference");
-            r
-        }
-        Err(_) => {
-            info!("Folder could not be loaded from reference, starting from scratch");
-            MemFolder::empty()
-        }
-    };
-    let memfolder = MemFolder::load_first_valid_with_ref(&conf, tags, &reference)?;
+    let memfolder = MemFolder::load_first_valid_with_ref(&conf, tags, &output)?;
 
     if !no_confirm && output.exists() && !get_confirmation(output, memfolder.0.keys().count()) {
         return Err(format_err!("Folder overwrite not confirmed."));
@@ -106,80 +118,6 @@ fn sync_folder(
     info!("Trying to create folder");
     memfolder.write_to_folder(output)?;
     Ok(())
-}
-
-fn check(config_path: &str, pedantic: bool) -> Result<()> {
-    check_recursion(config_path)?;
-
-    let conf = Config::from_general_path(config_path, true, None)?;
-    if pedantic && !conf.is_fully_hardened()? {
-        return Err(format_err!("There are files or inclusions without hashes!"));
-    }
-    let number_of_sources = conf.get_all()?.iter().map(|f| &f.sources).flatten().count();
-    let mut source_counter = 0;
-    for file in conf.get_all()? {
-        break_line();
-        if file.hash.is_none() {
-            yellow(format!(
-                "No hash for {}",
-                display_filename(file.get_path(), &file.get_tags())
-            ));
-        } else {
-            neutral(format!(
-                "Working on {}",
-                display_filename(file.get_path(), &file.get_tags())
-            ));
-        }
-        break_line();
-        let mut working_hash = file.hash.clone();
-        let mut misses = 0;
-        for source in &file.sources {
-            source_counter += 1;
-            match &source.fetch() {
-                Ok(contents) => {
-                    let current_hash = compute_hash(&contents);
-                    match &working_hash {
-                        Some(h) => {
-                            if h != &current_hash {
-                                return Err(format_err!(
-                                    "Hash did not match for {}",
-                                    display_filename(file.get_path(), &file.get_tags())
-                                ));
-                            }
-                        }
-                        None => working_hash = Some(current_hash),
-                    }
-                    green(format!(
-                        "Checked {}/{} : {}",
-                        source_counter, number_of_sources, source
-                    ));
-                }
-                Err(e) => {
-                    yellow(format!(
-                        "Failed {}/{} : {}",
-                        source_counter, number_of_sources, source
-                    ));
-                    yellow(format!("{}", e));
-                    misses = misses + 1;
-                    if misses == file.sources.len() {
-                        return Err(format_err!(
-                            "No valid sources for {}",
-                            display_filename(file.get_path(), &file.get_tags())
-                        ));
-                    }
-                }
-            }
-        }
-    }
-    Ok(())
-}
-
-fn display_filename(path: &PathBuf, tags: &Vec<String>) -> String {
-    if tags.is_empty() {
-        format!("path={} ", path.to_string_lossy())
-    } else {
-        format!("path={} / tags={}", path.to_string_lossy(), tags.join(", "))
-    }
 }
 
 fn write_example_config() -> Result<()> {
@@ -200,9 +138,11 @@ fn print_hash(path: &str) -> Result<()> {
 }
 fn print_tags(configpath: &str) -> Result<()> {
     check_recursion(configpath)?;
-    let config = Config::from_general_path(configpath, true, None)?;
+    let config = Config::from_general_path(configpath, true, None, false)?;
     break_line();
-    for tag in &config.tags() {
+    let mut tags = config.tags();
+    tags.sort();
+    for tag in &tags {
         neutral(format!("- {}", tag));
     }
     break_line();
@@ -211,7 +151,7 @@ fn print_tags(configpath: &str) -> Result<()> {
 
 fn print_list(configpath: &str, tags: &Vec<String>) -> Result<()> {
     check_recursion(configpath)?;
-    let config = Config::from_general_path(configpath, true, None)?;
+    let config = Config::from_general_path(configpath, true, None, true)?;
     let mut active_paths = config
         .get_active(tags)?
         .iter()
@@ -236,13 +176,13 @@ fn print_list(configpath: &str, tags: &Vec<String>) -> Result<()> {
     Ok(())
 }
 
-fn init_cache_dir() -> Result<PathBuf> {
-    let tmpdir = TempDir::new()?;
-    let path = tmpdir.path().to_path_buf();
-    let result = CACHEDIR.set(tmpdir);
-    match result {
-        Ok(_) => Ok(path),
-        Err(td) => Err(format_err!("Could not init cachedir {:?}", td)),
+fn clean_cache_dir() -> Result<()> {
+    match CACHEDIR.get() {
+        Some(cd) => {
+            fs::remove_dir_all(cd.path())?;
+            Ok(())
+        }
+        None => Ok(()),
     }
 }
 pub fn yellow(warning: impl AsRef<str>) {
@@ -258,10 +198,7 @@ pub fn neutral(message: impl AsRef<str>) {
     println!("{}", message.as_ref());
 }
 pub fn break_line() {
-    let columns = match terminal_size() {
-        Ok((c, _)) => c,
-        _ => 5,
-    };
+    let columns = terminal_size().unwrap_or((5, 5)).0;
     println!(
         "{}",
         std::iter::repeat('-')

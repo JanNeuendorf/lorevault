@@ -1,6 +1,4 @@
 use crate::*;
-use clap::{Parser, Subcommand};
-use dialoguer::Confirm;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about =Some("Make a directory reproducible by specifying its contents in a file."))]
@@ -8,6 +6,7 @@ use dialoguer::Confirm;
 pub struct Cli {
     #[command(subcommand)]
     pub command: Commands,
+    #[cfg(feature = "debug")]
     #[arg(
         short,
         long,
@@ -25,7 +24,12 @@ pub enum Commands {
         file: String,
         #[arg(help = "Destination directory")]
         output: PathBuf,
-        #[arg(short, long)]
+        #[arg(
+            short,
+            long,
+            use_value_delimiter(true),
+            long_help = "Tags must be defined in the configuration file"
+        )]
         tags: Vec<String>,
         #[arg(
             long,
@@ -34,28 +38,13 @@ pub enum Commands {
         )]
         no_confirm: bool,
     },
-    #[command(
-        about = "Print a report",
-        long_about = "Prints a report on the config. Fails if a file has no valid sources or a hash does not match"
-    )]
-    Check {
-        #[arg(help = "Config file")]
-        file: String,
-        #[arg(
-            short,
-            long,
-            default_value = "false",
-            help = "Fail if something does not have a hash"
-        )]
-        pedantic: bool,
-    },
     #[command(about = "Writes out an example configuration file", alias = "init")]
     Example {},
     #[command(about = "Prints the SHA3-256 hash of a file")]
     Hash { file: String },
     #[command(about = "Lists all the tags defined in the file")]
     Tags { file: String },
-    #[command(about = "Lists all the files that would be in the directory.")]
+    #[command(about = "Lists all the files that would be in the directory")]
     List {
         file: String,
         #[arg(short, long)]
@@ -64,19 +53,15 @@ pub enum Commands {
 }
 
 // A "general_path" is a string that might be a path or repo#id:subpath
-fn is_repo(general_path: &str) -> bool {
+pub fn is_repo(general_path: &str) -> bool {
     general_path.contains('#') && general_path.contains(':')
 }
 
 // Gets (repo,id,subpath) from a general path
-// This does not work if the id itself contains a colon.
-fn extract_components(s: &str) -> Option<(&str, &str, &str)> {
+pub fn extract_components(s: &str) -> Option<(&str, &str, &str)> {
     let index_of_last_hash = s.chars().enumerate().filter(|(_i, c)| *c == '#').last()?.0;
     let index_of_last_colon = s.chars().enumerate().filter(|(_i, c)| *c == ':').last()?.0;
     if index_of_last_hash + 1 >= index_of_last_colon {
-        return None;
-    }
-    if index_of_last_colon + 1 >= s.len() {
         return None;
     }
     let repo = &s[0..index_of_last_hash];
@@ -86,7 +71,7 @@ fn extract_components(s: &str) -> Option<(&str, &str, &str)> {
 }
 
 // Takes a general path and tries to parse it into a filesource.
-// It is called simple because it does not support archives. The config can not be loaded from an archive.
+// URLs are not supported
 // The reason for this is the added complexity with the SELF_ variables. It is probably not a common usecase.
 pub fn source_from_string_simple(general_path: &str) -> Result<sources::FileSource> {
     if is_repo(general_path) {
@@ -120,10 +105,12 @@ pub fn get_confirmation(folder_path: &PathBuf, newcount: usize) -> bool {
         file_count.expect("unchecked file count"),
         newcount
     );
-    match Confirm::new().with_prompt(prompt).interact() {
+    let status = match Confirm::new().with_prompt(prompt).interact() {
         Ok(true) => true,
         _ => false,
-    }
+    };
+
+    status
 }
 
 fn count_files_recursively(folder_path: &PathBuf) -> Result<usize> {

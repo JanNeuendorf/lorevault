@@ -1,5 +1,4 @@
 use crate::*;
-use serde::{Deserialize, Serialize};
 const fn default_true() -> bool {
     true
 }
@@ -152,12 +151,10 @@ impl FileEdit {
             true
         } else {
             for t in self.get_tags() {
-                //print!("checking {} against {:?}",t,tags);
                 if tags.contains(t) {
                     return true;
                 }
             }
-            // print!("inactive {:?}",self);
             return false;
         }
     }

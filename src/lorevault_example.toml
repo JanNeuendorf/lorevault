@@ -6,87 +6,17 @@
 # ███████  ██████  ██   ██ ███████   ████   ██   ██  ██████  ███████ ██    
 #                                                                          
 
-
-# A Lorevault config specifies a list of files that can be synced to a local directory.
-
-# To avoid repetition, variables can be defined.
-var.user="you"
-# See the README for predefined variables.
+var.lorevault_github="https://github.com/JanNeuendorf/lorevault.git"
 
 [[file]]
-# This is the relative path of the file in the directory. The parent directory is created automatically.
-path = "subdirectory/my_file"
-# The optional SHA3-256 hash of the file.
-hash = "741C077E70E4869ADBC29CCC34B7935B58DDAC16A4B8007AC127181E2148F468"
-# Then we list sources for the file.
-# The list is checked in order, so a local copy should be listed first.
-[[file.source]] # It could a local file
-type = "file"
-path = "/path/to/local/copy" # It must be an absolute path
-
-[[file.source]] # A remote or local git-repo with a specified commit
-type = "git"
-repo = "https://github.com/some_repo.git"
-id = "fb17a46eb92e8d779e57a10589e9012e9aa5f948"
-path = "path/in/repo"
-
-[[file]] 
-path = "readmefile.md"
-tags = ["documentation"] # This file will only be in the directory, if the tag "documentation" is given. 
-# It will replace untagged files at the same path.
-[[file.source]] # Here the contents of the file are specified directly
-type = "text"
-content = """
-## Header
- This coud be a readme file. It was written by {{user}}.
-"""
-# Here, a variable was used. "{{user}}" will be replaced with the name of the variable.
-ignore_variables=false # This is the default. If true, the text is protected from replacements.
-
-[[file]]
-path = "fromarchive.txt" 
-hash = "B314E28493EAE9DAB57AC4F0C6D887BDDBBEB810E900D818395ACE558E96516D"
-[[file.source]] # We can extract files from archives. Unencrypted zip,tar and tar.xz files are supported.
-type = "archive"
-archive = "/path/to/archive.zip" # It must be an absolute path
-path = "subdirectory/file.txt" # The path within the archive
-
-[[file]]
-path = "results/someimage.jpg"
-hash = "A000AE6EB9603F2FCEDD6CB9C370843DAB835E5AF80C81CA3A2D248D454629BC"
-[[file.source]]
-type = "http"
-url = "https://www.website.jpg"
-
-
-[[file]]
-path = "subdirectory/filename"
-# We can use the following shorthand notation:
-sources=["/some/path","repo#id:path","/path/to/archive.tar:file"]
-
-# We can make an edit without requiring a local copy
+path="readme.md"
+sources=["{{lorevault_github}}#main:README.md"]
 [[file.edit]]
 type="insert"
-content="# The document begins\n\n"
-position="start" # could be "end" or after a line number.
+position="start"
+content="""
 
-[[file.edit]]
-type="replace"
-from="setting=false"
-to="setting=true"
-tags=["flip"] # Will be skipped if the tag is not active.
+**This README is for the latest version of Lorevault!**
 
-[[file.edit]]
-type="delete"
-start=30 # line numbers (inclusive)
-end=100
+"""
 
-# We can include other config files.
-[[include]]
-config="/path/to/included.toml" # Must be absolute. Can be repo#id:path
-subdir="files/go/here" # Defaults to directory root.
-required_tags=["tag1"] # If not set, the file will not be included.
-with_tags=["tag2"] # Will be passed to the other file.
-# The optional hash of the included config file itself.
-hash = "69C2DA8874560C982F896938B744752F304E35EEEC63E7F5967E4E68FAD03070"
- 

@@ -1,9 +1,5 @@
-# Even though the included file has a tag and the local one does not, it should not be allowed.
+# The local path is valid if we run it from the project root, but local includes are not allowed.
 [[include]]
-config="{{SELF_ROOT}}/included1.toml"
+config="testing/included1.toml"
 with_tags=["main"]
-tags=["inc"]
 
-[[file]]
-path="included/main.rs"
-sources=["{{SELF_ROOT}}/../src/main.rs"]

@@ -1,5 +1,10 @@
-# The local path is valid if we run it from the project root, but local includes are not allowed.
+# If the tag is given, the two files clash
 [[include]]
-config="testing/included1.toml"
+config="{{SELF_ROOT}}/included1.toml"
 with_tags=["main"]
+tags=["inc"]
 
+[[include]]
+config="{{SELF_ROOT}}/included1.toml"
+with_tags=["main"]
+tags=["inc"]

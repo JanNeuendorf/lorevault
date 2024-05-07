@@ -1,7 +1,4 @@
 use crate::*;
-use serde::{Deserialize, Serialize};
-use serde_with::serde_as;
-const INCLUSION_RECURSION_LIMIT: usize = 10; // The depth of inclusions of other config files.
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde_as]
@@ -12,11 +9,16 @@ pub struct Config {
     variables_set: bool,
     #[serde(default, alias = "var")]
     variables: HashMap<String, String>,
-    #[serde(rename = "file", alias = "files", default)]
+    #[serde(rename = "file", default)]
     content: Vec<File>,
     #[serde(default)]
-    #[serde(alias = "include")]
+    #[serde(rename = "include")]
     inclusions: Vec<Inclusion>,
+    #[serde(default)]
+    #[serde(rename = "directory")]
+    directories: Vec<Directory>,
+    #[serde(default, skip)]
+    directories_expanded: bool,
 }
 
 impl Config {
@@ -24,9 +26,10 @@ impl Config {
     // It should error if two tagged files or two untagged files have the same path.
     // If an untagged file and a tagged file have the same path, only the tagged one is active.
     pub fn get_active(&self, tags: &Vec<String>) -> Result<Vec<File>> {
-        if !self.variables_set {
-            return Err(format_err!("Variables must have been set to get file list"));
-            //Should never happen, as long as we call set_variables() first.
+        if !self.variables_set || !self.directories_expanded {
+            return Err(format_err!(
+                "Variables must have been set and folders expanded to get file list"
+            ));
         }
         let defined_tags = self.tags();
         for requested_tag in tags {
@@ -38,66 +41,43 @@ impl Config {
             }
         }
         let mut new_content = vec![];
+        let mut file_list = self.content.clone();
+        for inc in &self.inclusions {
+            file_list.append(&mut inc.get_files()?)
+        }
         let mut paths = vec![];
-        let tagged_paths = self
-            .content
+        let tagged_paths = file_list
             .iter()
             .filter(|i| i.get_tags().iter().any(|ct| tags.contains(ct)))
             .map(|i| i.get_path().to_owned())
             .collect::<Vec<PathBuf>>();
-        for item in &self.content {
+        for item in &file_list {
             if !item.is_active(tags) {
                 continue;
             }
-            if item.get_tags().is_empty() && tagged_paths.contains(item.get_path()) {
+            if item.get_tags().is_empty() && tagged_paths.contains(&item.get_path()) {
                 continue;
             }
-            if paths.contains(item.get_path()) {
+            if paths.contains(&item.get_path()) {
                 return Err(format_err!(
                     "There are two files for path {}",
                     &item.get_path().to_string_lossy()
                 ));
             }
+
             new_content.push(item.clone());
             paths.push(item.get_path().clone())
         }
-        // The logic for included files is different in a subtle way.
-        // Even tagged included files do not overwrite other untagged files. They give an error, if the paths collide.
-        // This prevents a situation where an update to the included config overwrites the content of files defined locally.
-        for inc in &self.inclusions {
-            let files_to_include = inc.get_files()?;
-            for f2i in files_to_include {
-                if f2i.is_active(tags) {
-                    if paths.contains(&f2i.path) {
-                        if f2i.get_tags().len() == 0 && tagged_paths.contains(f2i.get_path()) {
-                            continue;
-                        } else {
-                            return Err(format_err!(
-                                "There are two files for path {}",
-                                &f2i.get_path().to_string_lossy()
-                            ));
-                        }
-                    }
-                    paths.push(f2i.path.clone());
-                    new_content.push(f2i);
-                }
-            }
-        }
 
         Ok(new_content)
     }
-    pub fn get_all(&self) -> Result<Vec<File>> {
-        let mut new_content = self.content.clone();
-        for inc in &self.inclusions {
-            let files_to_include = inc.get_files()?;
-            for f2i in files_to_include {
-                new_content.push(f2i);
-            }
-        }
-        Ok(new_content)
-    }
 
-    fn from_filesource(source: &FileSource, allow_local: bool, hash: Option<&str>) -> Result<Self> {
+    fn from_filesource(
+        source: &FileSource,
+        allow_local: bool,
+        hash: Option<&str>,
+        expand_dirs: bool,
+    ) -> Result<Self> {
         let data = match source {
             FileSource::Local { path } => {
                 if path.is_relative() && !allow_local {
@@ -121,25 +101,26 @@ impl Config {
             }
         }
         let toml_string = String::from_utf8(data)?;
-        if toml_string == include_str!("lorevault_example.toml") {
-            return Err(format_err!(
-                "The example must be modified to make it functional."
-            ));
-        }
 
         let conf: Self = toml::from_str(&toml_string)?;
-        Ok(conf.set_variables(source)?)
+        if expand_dirs {
+            Ok(conf.set_variables(source)?.expand_directories()?)
+        } else {
+            Ok(conf.set_variables(source)?)
+        }
     }
 
     // The allow_local flag is to make sure that local files are only valid, when the path was passed on the cli.
+    // expand_dir=false can be used if we are only interested in the tags. Then we don't need to load the directories.
     pub fn from_general_path(
         general_path: &str,
         allow_local: bool,
         hash: Option<&str>,
+        expand_dirs: bool,
     ) -> Result<Self> {
         let source = cli::source_from_string_simple(general_path)?;
         info!("Loading config from source {:?}", source);
-        Self::from_filesource(&source, allow_local, hash)
+        Self::from_filesource(&source, allow_local, hash, expand_dirs)
     }
     #[allow(unused)]
     pub fn write(&self, path: &PathBuf) -> Result<()> {
@@ -161,11 +142,7 @@ impl Config {
 
         let mut vars = self.variables.clone();
         match source {
-            FileSource::Git {
-                repo,
-                id,
-                path,
-            } => {
+            FileSource::Git { repo, id, path } => {
                 vars.insert("SELF_ID".to_string(), id.to_string());
                 vars.insert("SELF_REPO".to_string(), repo.to_string());
                 vars.insert(
@@ -186,10 +163,7 @@ impl Config {
                         .to_string()
                 };
 
-                vars.insert(
-                    "SELF_ROOT".to_string(),
-                    format!("{}#{}:", repostring, id),
-                );
+                vars.insert("SELF_ROOT".to_string(), format!("{}#{}:", repostring, id));
             }
             FileSource::Local { path } => {
                 let parent = path
@@ -219,14 +193,31 @@ impl Config {
         vars = resolve_variable_inter_refs(&vars)?;
         info!("Variables in {:?}: {:?} ", source, vars);
         new.content = new.content.set_variables(&vars)?;
+        new.directories = new.directories.set_variables(&vars)?;
         new.inclusions = new.inclusions.set_variables(&vars)?;
         Ok(Self {
             variables: new.variables,
             variables_set: true,
             content: new.content,
             inclusions: new.inclusions,
+            directories: new.directories,
+            directories_expanded: new.directories_expanded,
         })
     }
+    fn expand_directories(&self) -> Result<Self> {
+        let mut new_content = self.content.clone();
+        for d in &self.directories {
+            for file in d.get_all_files()? {
+                new_content.push(file);
+            }
+        }
+        Ok(Self {
+            content: new_content,
+            directories_expanded: true,
+            ..self.clone()
+        })
+    }
+
     pub fn tags(&self) -> Vec<String> {
         let mut taglists = vec![];
         for file in &self.content {
@@ -240,31 +231,17 @@ impl Config {
         }
         vecset(taglists)
     }
-    pub fn is_fully_hardened(&self) -> Result<bool> {
-        for f in self.get_all()? {
-            if f.hash.is_none() {
-                return Ok(false);
-            }
-        }
-        for i in &self.inclusions {
-            if !i.is_fully_hardened()? {
-                return Ok(false);
-            }
-        }
-        return Ok(true);
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct File {
     pub path: PathBuf,
-    #[serde(alias = "required_tags")]
     pub tags: Option<Vec<String>>,
     pub hash: Option<String>,
-    #[serde(alias = "source")]
+    #[serde(rename = "sources", alias = "source")]
     pub sources: Vec<FileSource>,
-    #[serde(alias = "edit", default)]
+    #[serde(rename = "edit", default)]
     pub edits: Vec<FileEdit>,
 }
 
@@ -276,8 +253,8 @@ impl File {
             vec![]
         }
     }
-    pub fn get_path(&self) -> &PathBuf {
-        &self.path
+    pub fn get_path(&self) -> PathBuf {
+        format_subpath(&self.path)
     }
     fn is_active(&self, reqtags: &Vec<String>) -> bool {
         let tags = self.get_tags();
@@ -329,7 +306,7 @@ fn fetch_first_valid(sources: &Vec<FileSource>, hash: &Option<String>) -> Result
             }
         } else {
             red(format!(
-                "Invalid source {:?} \nError: {}",
+                "Invalid source {} \nError: {}",
                 &s,
                 result.err().expect("error branch")
             ));
@@ -342,18 +319,21 @@ fn fetch_first_valid(sources: &Vec<FileSource>, hash: &Option<String>) -> Result
 #[serde(deny_unknown_fields)]
 pub struct Inclusion {
     pub config: String,
-    #[serde(alias = "required_tags")]
     pub tags: Option<Vec<String>>,
     #[serde(default)]
     pub with_tags: Vec<String>,
-    #[serde(default, alias = "path", alias = "subdir", alias = "subdirectory")]
+    #[serde(default, rename = "path")]
     pub subfolder: PathBuf,
     pub hash: Option<String>,
 }
 impl Inclusion {
     pub fn get_files(&self) -> Result<Vec<File>> {
-        let config =
-            Config::from_general_path(&self.config, false, self.hash.as_ref().map(|s| s.as_str()))?;
+        let config = Config::from_general_path(
+            &self.config,
+            false,
+            self.hash.as_ref().map(|s| s.as_str()),
+            true,
+        )?;
         let mut files: Vec<File> = vec![];
         for original_file in config.get_active(&self.with_tags)? {
             files.push(File {
@@ -367,11 +347,6 @@ impl Inclusion {
 
         Ok(files)
     }
-    pub fn is_fully_hardened(&self) -> Result<bool> {
-        let config =
-            Config::from_general_path(&self.config, false, self.hash.as_ref().map(|s| s.as_str()))?;
-        Ok(self.hash.is_some() && config.is_fully_hardened()?)
-    }
 }
 
 // This is just a helper function to check if the inclusions might be recursive
@@ -381,7 +356,7 @@ fn get_next_inclusion_level(cfgs: &Vec<String>) -> Result<Vec<String>> {
     for cfg in cfgs {
         let allow_local = tmp.len() == 0;
         tmp.push(
-            Config::from_general_path(cfg, allow_local, None)?
+            Config::from_general_path(cfg, allow_local, None, false)?
                 .inclusions
                 .iter()
                 .map(|inc| inc.config.to_string())
@@ -395,6 +370,7 @@ fn get_next_inclusion_level(cfgs: &Vec<String>) -> Result<Vec<String>> {
 // It must be manually called and checked before loading the config file.
 pub fn check_recursion(cfg: &str) -> Result<()> {
     let mut next_deps = vec![cfg.to_string()];
+    #[allow(unused)]
     for i in 0..INCLUSION_RECURSION_LIMIT {
         info!("Looking for recursions {} levels deep", i);
         next_deps = get_next_inclusion_level(&next_deps)?;
