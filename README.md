@@ -1,4 +1,4 @@
-# Lorevault
+# Lorevault 📜🏦
 
 Lorevault is a simple program that creates a directory from a declarative configuration file.
 
