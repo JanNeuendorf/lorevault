@@ -100,6 +100,13 @@ fn sync_folder(
     tags: &Vec<String>,
     no_confirm: bool,
 ) -> Result<()> {
+    if let (Ok(c_output), Ok(cwd)) = (output.canonicalize(), std::env::current_dir()) {
+        if c_output == cwd {
+            return Err(format_err!(
+                "This would overwrite your current working directory!"
+            ));
+        }
+    }
     info!(
         "Want to load config from {:?}",
         cli::source_from_string_simple(config_path)
@@ -109,7 +116,6 @@ fn sync_folder(
     info!("No recursion found");
     let conf = Config::from_general_path(config_path, true, None)?;
     info!("Parsed config file");
-
     let memfolder = MemFolder::load_first_valid_with_ref(&conf, tags, &output)?;
 
     if !no_confirm && output.exists() && !get_confirmation(output, memfolder.0.keys().count()) {
