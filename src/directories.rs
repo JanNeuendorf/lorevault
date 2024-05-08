@@ -13,6 +13,29 @@ pub struct Directory {
 }
 
 impl Directory {
+    pub fn get_tags(&self) -> Vec<String> {
+        self.tags.clone().unwrap_or(vec![])
+    }
+
+    fn is_active(&self, tags: &Vec<String>) -> bool {
+        if self.get_tags().len() == 0 {
+            return true;
+        }
+        for requested in self.get_tags() {
+            if tags.contains(&requested) {
+                return true;
+            }
+        }
+        return false;
+    }
+    pub fn get_active(&self, tags: &Vec<String>) -> Result<Vec<File>> {
+        if self.is_active(tags) {
+            self.get_all_files()
+        } else {
+            Ok(vec![])
+        }
+    }
+
     pub fn get_all_files(&self) -> Result<Vec<File>> {
         let anyhow::Result::Ok((source, list)) = list_first_valid(&self.sources) else {
             return Err(format_err!(

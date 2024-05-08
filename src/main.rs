@@ -107,7 +107,7 @@ fn sync_folder(
     info!("Checking for recursion");
     check_recursion(config_path)?;
     info!("No recursion found");
-    let conf = Config::from_general_path(config_path, true, None, true)?;
+    let conf = Config::from_general_path(config_path, true, None)?;
     info!("Parsed config file");
 
     let memfolder = MemFolder::load_first_valid_with_ref(&conf, tags, &output)?;
@@ -138,7 +138,7 @@ fn print_hash(path: &str) -> Result<()> {
 }
 fn print_tags(configpath: &str) -> Result<()> {
     check_recursion(configpath)?;
-    let config = Config::from_general_path(configpath, true, None, false)?;
+    let config = Config::from_general_path(configpath, true, None)?;
     break_line();
     let mut tags = config.tags();
     tags.sort();
@@ -151,7 +151,7 @@ fn print_tags(configpath: &str) -> Result<()> {
 
 fn print_list(configpath: &str, tags: &Vec<String>) -> Result<()> {
     check_recursion(configpath)?;
-    let config = Config::from_general_path(configpath, true, None, true)?;
+    let config = Config::from_general_path(configpath, true, None)?;
     let mut active_paths = config
         .get_active(tags)?
         .iter()
