@@ -322,6 +322,12 @@ impl Inclusion {
         for d in &config.directories {
             files.append(&mut d.get_active(&self.with_tags)?);
         }
+        if files.len() == 0 {
+            return Err(format_err!(
+                "Including zero files from a different config is not allowed. ({})",
+                self.config
+            ));
+        }
 
         Ok(files)
     }
