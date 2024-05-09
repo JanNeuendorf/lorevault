@@ -54,8 +54,17 @@ impl FileSource {
                 ))
             }
             FileSource::Download { url } => {
+                let spinner = ProgressBar::new_spinner();
+                spinner.set_style(
+                    ProgressStyle::default_spinner()
+                        .template("{spinner:.green}{spinner:.green} {msg}")
+                        .context("Failed because progress bar")?,
+                );
+                spinner.set_message(format!("Loading: {}", url));
+                spinner.enable_steady_tick(Duration::from_millis(50));
                 let response = reqwest::blocking::get(url)?;
                 let bytes = response.error_for_status()?.bytes()?.to_vec();
+                spinner.finish_with_message(format!("Loaded: {}", url));
                 Ok(bytes)
             }
             FileSource::Git {
