@@ -13,6 +13,11 @@ impl MemFolder {
     ) -> Result<Self> {
         let mut memfolder = MemFolder::empty();
         for item in &conf.get_active(tags)? {
+            if contains_parent_dir(&item.get_path()) {
+                return Err(format_err!(
+                    "Escaping the current folder (..) is not allowed."
+                ));
+            }
             let mut ref_path = reference.clone();
             ref_path.push(item.get_path());
             if let (Some(reqhash), Ok(content)) = (&item.hash, fs::read(ref_path)) {
@@ -67,4 +72,10 @@ impl MemFolder {
     pub fn size_in_bytes(&self) -> usize {
         self.0.values().map(|v| v.len()).sum()
     }
+}
+fn contains_parent_dir(path: &PathBuf) -> bool {
+    path.components().any(|component| match component {
+        std::path::Component::ParentDir => true,
+        _ => false,
+    })
 }
