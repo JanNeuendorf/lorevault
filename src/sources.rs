@@ -189,24 +189,14 @@ fn clone_repository(repo_url: &str) -> Result<Repository> {
         }
     };
 
-    let repo_at_cache = bare_clone(
+    let repo = bare_clone(
         repo_url,
         &cachedir
             .path()
             .join(cache_name(repo_url))
             .as_path()
             .to_path_buf(),
-    );
-
-    let repo = match repo_at_cache {
-        Ok(repo) => repo,
-        Err(_) => {
-            let temp_dir = TempDir::new()?;
-            yellow("Trying to write to existing cache directory");
-
-            bare_clone(repo_url, &temp_dir.path().to_path_buf())?
-        }
-    };
+    )?;
     spinner.finish_with_message(format!("Cloned: {}", repo_url));
 
     Ok(repo)

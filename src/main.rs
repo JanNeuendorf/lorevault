@@ -73,9 +73,9 @@ fn main() {
     }
     ctrlc::set_handler(move || {
         if let Err(_) = clean_cache_dir() {
-            yellow("Canceled. Cache directory could not be cleaned up");
+            red("Canceled. Cache directory could not be cleaned up");
         } else {
-            yellow("Canceled");
+            red("Canceled");
         }
         exit(2);
     })
