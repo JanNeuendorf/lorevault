@@ -4,6 +4,7 @@ use anyhow::{format_err, Context, Error, Result};
 use auth_git2::GitAuthenticator;
 use clap::{Parser, Subcommand};
 use colored::*;
+use ctrlc;
 use dialoguer::Confirm;
 use git2::{Oid, Repository};
 use indicatif::{ProgressBar, ProgressStyle};
@@ -70,6 +71,15 @@ fn main() {
             .expect("Could not initialize output for verbose mode.");
         info!("{:?}", &cli);
     }
+    ctrlc::set_handler(move || {
+        if let Err(_) = clean_cache_dir() {
+            yellow("Canceled. Cache directory could not be cleaned up");
+        } else {
+            yellow("Canceled");
+        }
+        exit(2);
+    })
+    .expect("Error setting Ctrl-C handler");
 
     let result = match &cli.command {
         Commands::Sync {
