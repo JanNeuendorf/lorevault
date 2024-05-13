@@ -83,6 +83,10 @@ fn list_first_valid(ds: &Vec<DirSource>) -> Result<(&DirSource, Vec<PathBuf>)> {
         if let anyhow::Result::Ok(l) = s.list() {
             return Ok((s, l));
         }
+        match s.list() {
+            Ok(l) => return Ok((s, l)),
+            Err(msg) => yellow(format!("Invalid directory source {} \nError: {}", &s, msg)),
+        }
     }
     Err(format_err!("No valid source for directory"))
 }
@@ -103,6 +107,15 @@ pub enum DirSource {
     Auto(String),
 }
 
+impl fmt::Display for DirSource {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Local { path } => write!(f, "{}", path.display()),
+            Self::Auto(a) => write!(f, "{}", a),
+            Self::Git { repo, id, path } => write!(f, "{}#{}:{}", repo, id, path.display()),
+        }
+    }
+}
 impl DirSource {
     pub fn list(&self) -> Result<Vec<PathBuf>> {
         let list = match self {

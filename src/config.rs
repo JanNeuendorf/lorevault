@@ -284,7 +284,7 @@ fn fetch_first_valid(sources: &Vec<FileSource>, hash: &Option<String>) -> Result
                 }
             }
         } else {
-            red(format!(
+            yellow(format!(
                 "Invalid source {} \nError: {}",
                 &s,
                 result.err().expect("error branch")

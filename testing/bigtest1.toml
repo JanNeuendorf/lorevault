@@ -4,7 +4,7 @@ var.favorite_black_cat="Freddy"
 
 [[directory]]
 path="program_src"
-sources=["{{rust_git_repo}}#{{rust_git_commit}}:src"]
+sources=["https://invalid.com#{{rust_git_commit}}:src","{{rust_git_repo}}#{{rust_git_commit}}:src"]
 
 [[directory]]
 path="/"
@@ -17,7 +17,7 @@ sources=["{{SELF_PARENT}}/../src/main.rs"]
 
 [[file]]
 path="Dracula.txt"
-sources=["https://www.gutenberg.org/cache/epub/345/pg345.txt",
+sources=["https://www.gtenberg.org/cache/epub/345/pg345.txt",
 "https://www.gutenberg.org/cache/epub/345/pg345.txt"]#To ensure linebreaks are allowed
 [[file.edit]]
 type="replace"
