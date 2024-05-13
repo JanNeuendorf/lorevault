@@ -87,7 +87,8 @@ fn main() {
             file,
             tags,
             no_confirm,
-        } => sync_folder(output, file, tags, *no_confirm),
+            skip_first_level,
+        } => sync_folder(output, file, tags, *no_confirm, *skip_first_level),
         Commands::Example {} => write_example_config(),
         Commands::Hash { file } => print_hash(file),
         Commands::Tags { file } => print_tags(file),
@@ -109,6 +110,7 @@ fn sync_folder(
     config_path: &str,
     tags: &Vec<String>,
     no_confirm: bool,
+    skip_fist: bool,
 ) -> Result<()> {
     if let (Ok(c_output), Ok(cwd)) = (output.canonicalize(), std::env::current_dir()) {
         if c_output == cwd {
@@ -127,13 +129,21 @@ fn sync_folder(
     let conf = Config::from_general_path(config_path, true, None)?;
     info!("Parsed config file");
     let memfolder = MemFolder::load_first_valid_with_ref(&conf, tags, &output)?;
-
-    if !no_confirm && output.exists() && !get_confirmation(output, memfolder.0.keys().count()) {
-        return Err(format_err!("Folder overwrite not confirmed."));
+    if !skip_fist {
+        if !no_confirm && output.exists() && !get_confirmation(output, memfolder.0.keys().count()) {
+            return Err(format_err!("Folder overwrite not confirmed."));
+        }
+        info!("Trying to create folder");
+        memfolder.write_to_folder(output)?;
+        Ok(())
+    } else {
+        let tracked = memfolder.tracked_subpaths()?;
+        if !no_confirm && output.exists() && !get_confirmation_skip_level(output, &tracked) {
+            return Err(format_err!("Folder overwrite not confirmed."));
+        }
+        memfolder.write_to_folder_skip_first(output)?;
+        Ok(())
     }
-    info!("Trying to create folder");
-    memfolder.write_to_folder(output)?;
-    Ok(())
 }
 
 fn write_example_config() -> Result<()> {

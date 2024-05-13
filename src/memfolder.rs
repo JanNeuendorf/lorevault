@@ -56,15 +56,7 @@ impl MemFolder {
         fs::create_dir(out_path)
             .context("Could not create output folder. Maybe its parent does not exist?")?;
 
-        for (subpath, content) in &self.0 {
-            let mut target_path = out_path.clone();
-            let subpath = format_subpath(subpath);
-            target_path.push(subpath);
-            let prefix = target_path.parent().context("Malformed path")?;
-            fs::create_dir_all(prefix).context("Path could not be created")?;
-            let mut _file = std::fs::File::create(&target_path)?;
-            fs::write(target_path, content).context("Could not write file")?;
-        }
+        self.write_into(out_path)?;
         Ok(())
     }
 
@@ -74,8 +66,25 @@ impl MemFolder {
                 for tracked in self.tracked_subpaths()? {
                     let mut tracked_path = out_path.clone();
                     tracked_path.push(tracked);
-                    fs::remove_dir_all(&out_path)
-                        .context(format!("Could not remove {}.", tracked_path.display()))?;
+                    if !tracked_path.exists() {
+                        continue;
+                    }
+                    if tracked_path.is_dir() {
+                        fs::remove_dir_all(&out_path).context(format!(
+                            "Could not remove directory {}.",
+                            tracked_path.display()
+                        ))?;
+                    } else if tracked_path.is_file() {
+                        fs::remove_file(&tracked_path).context(format!(
+                            "Could not remove file {}.",
+                            tracked_path.display()
+                        ))?;
+                    } else {
+                        return Err(format_err!(
+                            "Item at {} is not a file or directory.",
+                            tracked_path.display()
+                        ));
+                    }
                 }
             } else {
                 return Err(format_err!(
@@ -88,6 +97,11 @@ impl MemFolder {
                 .context("Could not create output folder. Maybe its parent does not exist?")?;
         }
 
+        self.write_into(out_path)?;
+        Ok(())
+    }
+
+    fn write_into(&self, out_path: &PathBuf) -> Result<()> {
         for (subpath, content) in &self.0 {
             let mut target_path = out_path.clone();
             let subpath = format_subpath(subpath);
@@ -100,11 +114,14 @@ impl MemFolder {
         Ok(())
     }
 
-    fn tracked_subpaths(&self) -> Result<Vec<PathBuf>> {
+    pub fn tracked_subpaths(&self) -> Result<Vec<PathBuf>> {
         let mut firsts = vec![];
         for k in self.0.keys() {
             let mut path = PathBuf::new();
             path.push(k.components().next().context("Empty path")?);
+            if firsts.contains(&path) {
+                continue;
+            }
             firsts.push(path);
         }
         Ok(firsts)

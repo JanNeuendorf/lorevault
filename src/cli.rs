@@ -33,6 +33,14 @@ pub enum Commands {
         tags: Vec<String>,
         #[arg(
             long,
+            short = 'S',
+            default_value = "false",
+            help = "Ignore paths differing at the first level"
+        )]
+        skip_first_level: bool,
+        #[arg(
+            long,
+            short = 'Y',
             default_value = "false",
             help = "Overwrite target directory without confirmation"
         )]
@@ -104,6 +112,28 @@ pub fn get_confirmation(folder_path: &PathBuf, newcount: usize) -> bool {
         folder_path.to_string_lossy(),
         file_count.expect("unchecked file count"),
         newcount
+    );
+    let status = match Confirm::new().with_prompt(prompt).interact() {
+        Ok(true) => true,
+        _ => false,
+    };
+
+    status
+}
+
+pub fn get_confirmation_skip_level(folder_path: &PathBuf, tracked_paths: &Vec<PathBuf>) -> bool {
+    let file_count = count_files_recursively(folder_path);
+    if file_count.is_err() {
+        return false;
+    }
+    let list = tracked_paths
+        .iter()
+        .map(|f| format!("- {}", f.display()))
+        .collect::<Vec<String>>()
+        .join("\n");
+    let prompt = format!(
+        "All paths starting with:\n{}\nWill be overwritten!\nIs that OK?",
+        list
     );
     let status = match Confirm::new().with_prompt(prompt).interact() {
         Ok(true) => true,
