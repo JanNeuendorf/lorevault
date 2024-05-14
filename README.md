@@ -224,6 +224,49 @@ If the config file is referred to as `repo#commit:config.toml` (from the CLI or 
 the contents of `new/filename.txt` will match the state of `data/file.txt` at the time of that commit. 
 If it is referred to with a path, it is the current version in the directory.
 
+## Partially Managing a Directory
+Sometimes we do not want to control the entire directory. A good example might be managing **dotfiles** in `~/.config`. 
+Resetting the entire directory is probably not what we want. Maybe the configuration files for some programs are managed in some other way. 
+
+To only update parts of the directory we can use:
+```sh
+lorevault sync -S config.toml target_dir
+```
+where the `-S` stands for *skip first level*. 
+
+This will preserve paths that differ from the controlled files at the first level. 
+
+Great, what does that mean? It means that if your `config.toml` creates a file in a specific subdirectory (directly or by import) 
+this subdirectory is deleted and recreated according to the config. If no such file exists, the subdirectory (or file) is left as it was. 
+
+Let's walk through an example:
+
+The config file defines the following files (as can be seen with the `list` subcommand).
+- `subdir1/subsubdir/file1.txt`
+- `file2.txt`
+
+The directory currently looks like this:
+```
+target_directory/
+│
+├─── file2.txt
+│
+├─── file3.txt
+│
+├─── subdir1/
+│    └── file
+│
+└───subdir2/
+     └── file
+```
+
+
+What will happen when running `sync -S` is the following:
+- A path starting with `subdir1` is defined in the config file. Therefore, the program assumes that we want to control the entire folder `subdir1`. **It is completely replaced.** It does not matter that we only defined a single file in a subdirectory.
+- `file2.txt` is also defined. Therefore the file is replaced.
+- `file3.txt` is not defined and there is no file starting with `subdir2/`. These paths are not deleted or changed. 
+
+Unless we use the `-Y` option, we will get a list of all controlled paths for confirmation.
 
 
 ## Limitations
