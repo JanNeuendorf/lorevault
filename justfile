@@ -16,7 +16,7 @@ clean: test_clean
 
 test: fmt
     cargo test
-    just bigtest1 failure_tests edits_test
+    just bigtest1 bigtest2 failure_tests edits_test
 
 build: test 
     cargo build --release
@@ -44,6 +44,36 @@ build_musl: test
     {{test_prefix}} sync testing/bigtest1.toml tmpfolder --no-confirm --tags=replace_main,inc 
     just count_folder "tmpfolder" 4
     just output_contains "diff testing/testfolder tmpfolder/included" ""
+
+@bigtest2:test_clean
+    {{test_prefix}} sync -Y testing/bigtest2.toml tmpfolder 
+    just count_folder "tmpfolder" 1
+    touch tmpfolder/manfile 
+    just count_folder "tmpfolder" 2
+    {{test_prefix}} sync -SY testing/bigtest2.toml tmpfolder
+    just count_folder "tmpfolder" 2
+    {{test_prefix}} sync -Y testing/bigtest2.toml tmpfolder
+    just count_folder "tmpfolder" 1
+    touch tmpfolder/alacritty/manfile 
+    {{test_prefix}} sync -SY testing/bigtest2.toml tmpfolder
+    just count_folder "tmpfolder/alacritty" 2
+    touch tmpfolder/manfile 
+    echo "nonsense" >tmpfolder/.shellrc
+    echo "nonsense" >tmpfolder/alacritty/theme.toml
+    {{test_prefix}} sync -SY testing/bigtest2.toml tmpfolder
+    just output_contains "cat tmpfolder/.shellrc" "nonsense"
+    just output_contains "cat tmpfolder/alacritty/theme.toml" "#282a36"
+    {{test_prefix}} sync -SY testing/bigtest2.toml tmpfolder --tags="pink"
+    just output_contains "cat tmpfolder/.shellrc" "pink"
+    just output_contains "cat tmpfolder/alacritty/theme.toml" "#f699cd"
+
+
+
+
+
+
+
+
 
     
 @failure_tests: test_clean 

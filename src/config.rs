@@ -280,7 +280,7 @@ fn fetch_first_valid(sources: &Vec<FileSource>, hash: &Option<String>) -> Result
                 {
                     return result;
                 } else {
-                    red(format!("Invalid hash {:?}", &s));
+                    red(format!("Invalid hash {}", &s));
                 }
             }
         } else {

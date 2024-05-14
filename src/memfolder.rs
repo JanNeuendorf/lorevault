@@ -28,6 +28,10 @@ impl MemFolder {
                         item.get_path().clone(),
                         item.from_reference_unchecked(&content, tags)?,
                     );
+                } else {
+                    memfolder
+                        .0
+                        .insert(item.get_path().clone(), item.build(tags)?);
                 }
             } else {
                 memfolder
@@ -66,11 +70,12 @@ impl MemFolder {
                 for tracked in self.tracked_subpaths()? {
                     let mut tracked_path = out_path.clone();
                     tracked_path.push(tracked);
+
                     if !tracked_path.exists() {
                         continue;
                     }
                     if tracked_path.is_dir() {
-                        fs::remove_dir_all(&out_path).context(format!(
+                        fs::remove_dir_all(&tracked_path).context(format!(
                             "Could not remove directory {}.",
                             tracked_path.display()
                         ))?;

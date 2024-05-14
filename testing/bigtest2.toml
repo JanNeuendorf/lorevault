@@ -1,0 +1,34 @@
+[variables]
+dracula_git_commit="9ae0fdedd423803f0401f6e7a23cd2bb88c175b2"
+dracula_git_repo="https://github.com/dracula/alacritty"
+alacritty_git_repo="https://github.com/TwiggieSmallz/Default-Alacritty-TOML-Config"
+alacritty_git_commit="dbeeb77" # Short hash
+alacritty_subdir="alacritty"
+
+[[file]]
+hash = "63AD62990580349F1C703EA2C75AB62D590981E0264765016A06DD597A196382"
+path="{{alacritty_subdir}}/theme.toml"
+sources=["{{dracula_git_repo}}#{{dracula_git_commit}}:dracula.toml"]
+
+[[file.edit]]
+tags=["pink"]
+type="replace"
+from="""#282a36"""
+to="""#f699cd"""
+
+[[file]]
+path="{{alacritty_subdir}}/alacritty.toml"
+hash = "1E3ACE40570D1B7A69354CEEF0E5F2382B9848E1F549FA805D893C105D649671"
+sources=["{{alacritty_git_repo}}#{{alacritty_git_commit}}:alacritty.toml"]
+
+[[file.edit]]
+type="replace"
+from="""import = []"""
+to='''import = ["theme.toml"]''' #While a multiline string would work, we test the raw string.
+
+[[file]]
+path=".shellrc" # Not a real dotfile, just an example for a hidden file.
+tags=["pink"]
+[[file.source]]
+type="text"
+content="""on_startup: echo "think pink!" """ 
