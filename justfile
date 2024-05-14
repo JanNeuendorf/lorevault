@@ -12,11 +12,12 @@ clean: test_clean
 
 @test_clean:
     -rm -r tmpfolder
-    - rm lorevault_example.toml
+    -rm lorevault_example.toml
+    -rm -rf testing/testrepo
 
 test: fmt
     cargo test
-    just bigtest1 bigtest2 failure_tests edits_test
+    just bigtest1 bigtest2 gittest failure_tests edits_test 
 
 build: test 
     cargo build --release
@@ -66,6 +67,22 @@ build_musl: test
     {{test_prefix}} sync -SY testing/bigtest2.toml tmpfolder --tags="pink"
     just output_contains "cat tmpfolder/.shellrc" "pink"
     just output_contains "cat tmpfolder/alacritty/theme.toml" "#f699cd"
+
+@gittest:test_clean
+    mkdir testing/testrepo
+    cd testing/testrepo && git init
+    cd testing/testrepo && git checkout -b develop
+    cd testing/testrepo && echo "something" >file1
+    cd testing/testrepo && git add file1
+    cd testing/testrepo && git commit -m "first commit"
+    cd testing/testrepo && echo "changed" >file1
+    cd testing/testrepo && git add file1
+    cd testing/testrepo && git commit -m "second commit"
+    {{test_prefix}} sync -Y testing/gittest.toml tmpfolder 
+    just output_contains "cat tmpfolder/file1_before tmpfolder/file1_now" "something\nchanged"
+
+
+
 
 
 

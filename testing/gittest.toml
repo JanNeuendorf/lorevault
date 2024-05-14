@@ -1,0 +1,6 @@
+[[file]]
+path="file1_now"
+sources=["{{SELF_PARENT}}/testrepo#develop:file1"]
+[[file]]
+path="file1_before"
+sources=["{{SELF_PARENT}}/testrepo#develop^:file1"]

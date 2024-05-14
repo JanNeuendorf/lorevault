@@ -1,10 +1,8 @@
 /target
 todo*
-tmp.py
 lorevault_example.toml
-download_example.toml
 tmpfolder
 test.toml
 local_testing
-oldREADME*
 .vscode
+testing/testrepo
