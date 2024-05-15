@@ -17,7 +17,7 @@ clean: test_clean
 
 test: fmt
     cargo test
-    just bigtest1 bigtest2 bigtest3 failure_tests edits_test 
+    just example_test bigtest1 bigtest2 bigtest3 failure_tests edits_test 
 
 build: test 
     cargo build --release
@@ -33,7 +33,14 @@ build_musl: test
     -cargo build --release --target=x86_64-unknown-linux-musl 
     cargo build --release --target=x86_64-unknown-linux-musl 
     just output_contains "ldd target/x86_64-unknown-linux-musl/release/lorevault" "statically linked"
-    
+
+# Check if the example file works.
+@example_test: test_clean
+    {{test_prefix}} sync src/lorevault_example.toml tmpfolder -Y -t theme 
+    just output_contains 'grep Dracula  tmpfolder/Count_Freddy.txt|wc -l' '1'
+    {{exists}} "tmpfolder/theme_directory"
+
+
 @bigtest1:test_clean
     # We start by simply checking that the file works.
     {{test_prefix}} sync testing/bigtest1.toml tmpfolder --no-confirm
@@ -118,6 +125,14 @@ build_musl: test
     echo changed>tmpfolder/file1_now 
     {{test_prefix}} sync -Y testing/bigtest3.toml tmpfolder
 
+    # We build the repo again, but this time we load a config from it
+    just make_test_repo
+    {{test_prefix}} sync -Y {{justfile_directory()}}/testing/testrepo#develop^:included3.toml tmpfolder
+    just output_contains "cat tmpfolder/file1" "something"
+    {{test_prefix}} sync -Y {{justfile_directory()}}/testing/testrepo#develop:included3.toml tmpfolder
+    just output_contains "cat tmpfolder/file1" "changed"
+    {{test_prefix}} sync -Y {{justfile_directory()}}/testing/testrepo#HEAD:included3.toml tmpfolder
+    just output_contains "cat tmpfolder/file1" "start over"
 
 # Creates a repo for testing with two commits on the develop branch.
 make_test_repo:
@@ -126,14 +141,15 @@ make_test_repo:
     cd testing/testrepo && git init
     cd testing/testrepo && git checkout -b develop
     cd testing/testrepo && echo "something" >file1
-    cd testing/testrepo && git add file1
+    cp testing/included3.toml testing/testrepo/
+    cd testing/testrepo && git add .
     cd testing/testrepo && git commit -m "first commit"
     cd testing/testrepo && echo "changed" >file1
-    cd testing/testrepo && git add file1
+    cd testing/testrepo && git add .
     cd testing/testrepo && git commit -m "second commit"
     cd testing/testrepo && git checkout -b feature
     cd testing/testrepo && echo "start over" >file1
-    cd testing/testrepo && git add file1
+    cd testing/testrepo && git add .
     cd testing/testrepo && git commit -m "third commit"
 
 # This tests various files that have something wrong with them.
@@ -158,7 +174,6 @@ make_test_repo:
     just check_hash tmpfolder/rustlings_readme.md F0BC491EBBCA0BA3DF0F6E11CB9C2CA97EFAC84BA2A65C8AFADD0D045AD0B4DE
     {{test_prefix}} sync testing/edits_test.toml tmpfolder --no-confirm -t append
     just check_hash tmpfolder/rustlings_readme.md 88C468F15606A5BD5EADA0F0475991A2FC01ACA8032BBC5A254CC74D6AA1274A
-
 
 # Check if a folder contains the expected number of items.
 count_folder folder expected:

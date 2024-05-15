@@ -1,0 +1,5 @@
+# This is just for inclusion in the test_repo
+[[file]]
+path="file1"
+sources=["{{SELF_ROOT}}/file1"]
+
