@@ -17,6 +17,8 @@ pub enum FileEdit {
         tags: Vec<String>,
         #[serde(default)]
         ignore_variables: bool,
+        #[serde(default)]
+        ignore_case: bool,
     },
     #[serde(rename = "insert")]
     Insert {
@@ -53,15 +55,34 @@ impl FileEdit {
         let str = input.as_ref();
         match &self {
             Self::Replace {
-                from, to, required, ..
+                from,
+                to,
+                required,
+                ignore_case,
+                ..
             } => {
-                if *required && !str.contains(from) {
-                    Err(format_err!(
-                        "Replacement {} was required but not found",
-                        from
-                    ))
+                if *ignore_case {
+                    let pattern_string = format!("(?i){}", from);
+                    let pattern = Regex::new(&pattern_string)
+                        .context("Could not build regex for replacement")?;
+                    if *required && pattern.find(input.as_ref()).is_none() {
+                        Err(format_err!(
+                            "Replacement {} was required but not found",
+                            from
+                        ))
+                    } else {
+                        let replaced = pattern.replace_all(input.as_ref(), to);
+                        Ok(replaced.to_string())
+                    }
                 } else {
-                    Ok(str.replace(from, to))
+                    if *required && !str.contains(from) {
+                        Err(format_err!(
+                            "Replacement {} was required but not found",
+                            from
+                        ))
+                    } else {
+                        Ok(str.replace(from, to))
+                    }
                 }
             }
             Self::Insert {
@@ -119,6 +140,7 @@ impl FileEdit {
                 to,
                 required,
                 ignore_variables,
+                ignore_case,
                 ..
             } => Self::Replace {
                 from: from.clone(),
@@ -126,6 +148,7 @@ impl FileEdit {
                 tags: vec![],
                 required: *required,
                 ignore_variables: *ignore_variables,
+                ignore_case: *ignore_case,
             },
             Self::Insert {
                 content,
@@ -208,12 +231,14 @@ impl VariableCompletion for FileEdit {
                 required: optional,
                 tags,
                 ignore_variables,
+                ignore_case,
             } => Ok(Self::Replace {
                 from: from.set_single_variable(key, value)?,
                 to: to.set_single_variable(key, value)?,
                 required: *optional,
                 tags: tags.clone(),
                 ignore_variables: *ignore_variables,
+                ignore_case: *ignore_case,
             }),
             Self::Insert {
                 content,
