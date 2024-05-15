@@ -25,7 +25,7 @@ While you can be pedantic, you do not have to be, so you can use this for simple
 **This can also be used to manage your dotfiles.** 
 
 ## Getting Started
-You can install lorevault using Cargo.
+You can install the latest version using Cargo.
 ```bash
 cargo install --git https://github.com/JanNeuendorf/lorevault
 ```
@@ -34,6 +34,7 @@ Then run
 lorevault example
 ```
 to get a basic example.
+
 
 ## CLI 
 The command:

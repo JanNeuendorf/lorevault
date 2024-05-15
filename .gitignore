@@ -6,3 +6,4 @@ test.toml
 local_testing
 .vscode
 testing/testrepo
+releases

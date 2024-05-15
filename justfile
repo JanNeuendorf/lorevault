@@ -34,6 +34,17 @@ build_musl: test
     cargo build --release --target=x86_64-unknown-linux-musl 
     just output_contains "ldd target/x86_64-unknown-linux-musl/release/lorevault" "statically linked"
 
+
+release:
+    #!/bin/bash
+    cargo_pkgid=$(cargo pkgid)
+    crate_id=$(echo "$cargo_pkgid" | cut -d "#" -f2)
+    name=lorevault-$crate_id-x86_64-linux
+    just clean test build build_musl
+    cp target/x86_64-unknown-linux-musl/release/lorevault releases/$name
+    just output_contains "./releases/$name -V" "$crate_id"
+
+
 # Check if the example file works.
 @example_test: test_clean
     {{test_prefix}} sync src/lorevault_example.toml tmpfolder -Y -t theme 
