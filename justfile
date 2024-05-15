@@ -17,7 +17,7 @@ clean: test_clean
 
 test: fmt
     cargo test
-    just bigtest1 bigtest2 gittest failure_tests edits_test 
+    just bigtest1 bigtest2 bigtest3 failure_tests edits_test 
 
 build: test 
     cargo build --release
@@ -68,7 +68,22 @@ build_musl: test
     just output_contains "cat tmpfolder/.shellrc" "pink"
     just output_contains "cat tmpfolder/alacritty/theme.toml" "#f699cd"
 
-@gittest:test_clean
+@bigtest3:test_clean
+    just make_test_repo
+    {{test_prefix}} sync -Y testing/bigtest3.toml tmpfolder -t head
+    just output_contains "cat tmpfolder/file1_before tmpfolder/file1_now" "something\nchanged"
+    rm -rf testing/testrepo 
+    {{test_prefix}} sync -Y testing/bigtest3.toml tmpfolder 
+    just error_contains "{{test_prefix}} sync -Y testing/bigtest3.toml tmpfolder -t head" "No valid source in list"
+    echo nonsense>tmpfolder/file1_now 
+    just error_contains "{{test_prefix}} sync -Y testing/bigtest3.toml tmpfolder" "No valid source in list"
+    echo changed>tmpfolder/file1_now 
+    {{test_prefix}} sync -Y testing/bigtest3.toml tmpfolder
+
+
+
+make_test_repo:
+    -rm -rf testing/testrepo
     mkdir testing/testrepo
     cd testing/testrepo && git init
     cd testing/testrepo && git checkout -b develop
@@ -78,19 +93,6 @@ build_musl: test
     cd testing/testrepo && echo "changed" >file1
     cd testing/testrepo && git add file1
     cd testing/testrepo && git commit -m "second commit"
-    {{test_prefix}} sync -Y testing/gittest.toml tmpfolder 
-    just output_contains "cat tmpfolder/file1_before tmpfolder/file1_now" "something\nchanged"
-
-
-
-
-
-
-
-
-
-
-
 
     
 @failure_tests: test_clean 
