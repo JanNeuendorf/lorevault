@@ -924,7 +924,7 @@ checksum = "90ed8c1e510134f979dbc4f070f87d4313098b704861a105fe34231c70a3901c"
 
 [[package]]
 name = "lorevault"
-version = "0.10.4"
+version = "0.10.5"
 dependencies = [
  "anyhow",
  "auth-git2",

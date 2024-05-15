@@ -18,7 +18,8 @@ pub trait VariableCompletion: Sized + Clone {
 
 impl VariableCompletion for String {
     fn required_variables(&self) -> Result<Vec<String>> {
-        let re = Regex::new(r"\{\{([^{}]+)\}\}").unwrap();
+        let re = Regex::new(r"\{\{([^{}]+)\}\}")
+            .context("Failed to initialize regular expression for variables")?; // This should never happen since the expression is fixed.
         let mut variables = Vec::new();
 
         for capture in re.captures_iter(self) {

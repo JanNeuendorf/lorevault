@@ -206,6 +206,7 @@ pub fn init_cache_dir() -> Result<PathBuf> {
     let tmpdir = TempDir::new()?;
     let path = tmpdir.path().to_path_buf();
     let result = CACHEDIR.set(tmpdir);
+    info!("Cache directory: {:?}", path);
     match result {
         Ok(_) => Ok(path),
         Err(td) => Err(format_err!("Could not init cachedir {:?}", td)),

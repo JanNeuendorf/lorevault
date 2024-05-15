@@ -6,8 +6,8 @@ use crate::*;
 pub struct Config {
     #[serde(default)]
     #[serde(skip)]
-    variables_set: bool,
-    #[serde(default, alias = "var")]
+    variables_set: bool, // This is just a flag to ensure that we do not work with a config before tha variables have been replaced.
+    #[serde(default, alias = "var")] // The alias lets us write var.key=value in the toml file.
     variables: HashMap<String, String>,
     #[serde(rename = "file", default)]
     content: Vec<File>,
@@ -80,7 +80,7 @@ impl Config {
                         path
                     ));
                 }
-                info!("Loading config from local file {}", path.display());
+
                 fs::read(path).context(format!("Could not load config {}", path.display()))?
             }
             FileSource::Git { .. } => source.fetch()?,
@@ -88,7 +88,7 @@ impl Config {
                 return Err(format_err!("Loading config from unsupported filesource."));
             }
         };
-
+        // This is only relevant if the config was included.
         if let Some(hash) = hash {
             if compute_hash(&data) != hash {
                 return Err(format_err!("Hash of loaded config did not match."));
@@ -102,7 +102,6 @@ impl Config {
     }
 
     // The allow_local flag is to make sure that local files are only valid, when the path was passed on the cli.
-    // expand_dir=false can be used if we are only interested in the tags. Then we don't need to load the directories.
     pub fn from_general_path(
         general_path: &str,
         allow_local: bool,
@@ -112,7 +111,7 @@ impl Config {
         info!("Loading config from source {:?}", source);
         Self::from_filesource(&source, allow_local, hash)
     }
-    #[allow(unused)]
+    #[allow(unused)] // This is handy if one wants to see what a new field looks like in a .toml file.
     pub fn write(&self, path: &PathBuf) -> Result<()> {
         let toml = toml::to_string_pretty(self)?;
         fs::write(path, toml)?;
@@ -120,6 +119,12 @@ impl Config {
     }
 
     pub fn set_variables(&self, source: &FileSource) -> Result<Self> {
+        if self.variables_set {
+            // This should never happen.
+            return Err(format_err!(
+                "Trying to set variables twice for the same config."
+            ));
+        }
         let mut new = self.clone();
         if self
             .variables
@@ -164,11 +169,8 @@ impl Config {
                     .to_str()
                     .context("Could not parse the config path to string.")?
                     .to_string();
-                vars.insert("SELF_PARENT".to_string(), parent);
-                vars.insert(
-                    "SELF_ROOT".to_string(),
-                    vars.get("SELF_PARENT").expect("just set").clone(),
-                );
+                vars.insert("SELF_PARENT".to_string(), parent.clone());
+                vars.insert("SELF_ROOT".to_string(), parent);
                 vars.insert(
                     "SELF_NAME".to_string(),
                     path.file_name()
@@ -178,7 +180,12 @@ impl Config {
                         .to_string(),
                 );
             }
-            _ => {}
+            _ => {
+                // This should be unreachable.
+                return Err(format_err!(
+                    "Configs should only be read from repos or local paths."
+                ));
+            }
         }
         vars = resolve_variable_inter_refs(&vars)?;
         info!("Variables in {:?}: {:?} ", source, vars);
@@ -280,7 +287,7 @@ fn fetch_first_valid(sources: &Vec<FileSource>, hash: &Option<String>) -> Result
                 {
                     return result;
                 } else {
-                    red(format!("Invalid hash {}", &s));
+                    red(format!("Invalid hash {}", &s)); // This might not kill the program, but it is bad enough to warrant red text.
                 }
             }
         } else {
@@ -322,6 +329,7 @@ impl Inclusion {
         for d in &config.directories {
             files.append(&mut d.get_active(&self.with_tags)?);
         }
+        // Including an empty file is forbidden, because lorevault knows only files and no empty directories.
         if files.len() == 0 {
             return Err(format_err!(
                 "Including zero files from a different config is not allowed. ({})",
@@ -331,23 +339,6 @@ impl Inclusion {
 
         Ok(files)
     }
-}
-
-// This is just a helper function to check if the inclusions might be recursive
-fn get_next_inclusion_level(cfgs: &Vec<String>) -> Result<Vec<String>> {
-    let mut tmp = vec![];
-
-    for cfg in cfgs {
-        let allow_local = tmp.len() == 0;
-        tmp.push(
-            Config::from_general_path(cfg, allow_local, None)?
-                .inclusions
-                .iter()
-                .map(|inc| inc.config.to_string())
-                .collect::<Vec<String>>(),
-        );
-    }
-    Ok(vecset(tmp))
 }
 
 // This can be used to check for recursion in the inclusions.
@@ -368,4 +359,20 @@ pub fn check_recursion(cfg: &str) -> Result<()> {
         "The inclusions are too deep (max depth={}) or recursive.",
         INCLUSION_RECURSION_LIMIT
     ))
+}
+// This is just a helper function to check if the inclusions might be recursive
+fn get_next_inclusion_level(cfgs: &Vec<String>) -> Result<Vec<String>> {
+    let mut tmp = vec![];
+
+    for cfg in cfgs {
+        let allow_local = tmp.len() == 0;
+        tmp.push(
+            Config::from_general_path(cfg, allow_local, None)?
+                .inclusions
+                .iter()
+                .map(|inc| inc.config.to_string())
+                .collect::<Vec<String>>(),
+        );
+    }
+    Ok(vecset(tmp))
 }

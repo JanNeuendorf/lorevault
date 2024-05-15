@@ -55,7 +55,12 @@ pub enum Commands {
     #[command(about = "Lists all the files that would be in the directory")]
     List {
         file: String,
-        #[arg(short, long)]
+        #[arg(
+            short,
+            long,
+            use_value_delimiter(true),
+            long_help = "Tags must be defined in the configuration file"
+        )]
         tags: Vec<String>,
     },
 }
@@ -66,6 +71,7 @@ pub fn is_repo(general_path: &str) -> bool {
 }
 
 // Gets (repo,id,subpath) from a general path
+// There are certain combinations of : and # in the url,id and path that can not be expressed with this syntax.
 pub fn extract_components(s: &str) -> Option<(&str, &str, &str)> {
     let index_of_last_hash = s.chars().enumerate().filter(|(_i, c)| *c == '#').last()?.0;
     let index_of_last_colon = s.chars().enumerate().filter(|(_i, c)| *c == ':').last()?.0;
@@ -81,6 +87,8 @@ pub fn extract_components(s: &str) -> Option<(&str, &str, &str)> {
 // Takes a general path and tries to parse it into a filesource.
 // URLs are not supported
 // The reason for this is the added complexity with the SELF_ variables. It is probably not a common usecase.
+// It is called simple because sources for files defined in the file are parsed in a similar way,
+// but the function for config-files is more conservative.
 pub fn source_from_string_simple(general_path: &str) -> Result<sources::FileSource> {
     if is_repo(general_path) {
         match extract_components(general_path) {
@@ -143,6 +151,7 @@ pub fn get_confirmation_skip_level(folder_path: &PathBuf, tracked_paths: &Vec<Pa
     status
 }
 
+// This ignores things that are not files.
 fn count_files_recursively(folder_path: &PathBuf) -> Result<usize> {
     let mut count = 0;
     if let Ok(entries) = fs::read_dir(folder_path) {

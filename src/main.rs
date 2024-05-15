@@ -1,3 +1,4 @@
+//------------------------------------------------------------
 //External dependencies
 //------------------------------------------------------------
 use anyhow::{format_err, Context, Error, Result};
@@ -22,11 +23,11 @@ use std::{
 };
 use tempfile::TempDir;
 use termion::terminal_size;
+
 // Tracing is only used with the debug feature
 #[cfg(feature = "debug")]
-use tracing::Level;
-#[cfg(feature = "debug")]
-use tracing_subscriber::FmtSubscriber;
+use {tracing::Level, tracing_subscriber::FmtSubscriber};
+
 //------------------------------------------------------------
 //Internal dependencies
 //------------------------------------------------------------
@@ -37,19 +38,13 @@ mod edits;
 mod memfolder;
 mod sources;
 mod variables;
-use cli::*;
-use config::{check_recursion, Config, File, Inclusion};
-use directories::*;
-use edits::*;
-use memfolder::MemFolder;
-use sources::*;
-use variables::*;
+use {cli::*, config::*, directories::*, edits::*, memfolder::*, sources::*, variables::*};
+
 //------------------------------------------------------------
 //constants
 //------------------------------------------------------------
 pub static CACHEDIR: OnceCell<TempDir> = OnceCell::new();
-const INCLUSION_RECURSION_LIMIT: usize = 10; // The depth of inclusions of other config files.
-                                             //------------------------------------------------------------
+const INCLUSION_RECURSION_LIMIT: usize = 20; // The depth of inclusions of other config files.
 
 //info!() does nothing if --features=debug is not active.
 #[macro_export]
@@ -165,9 +160,10 @@ fn print_hash(path: &str) -> Result<()> {
 fn print_tags(configpath: &str) -> Result<()> {
     check_recursion(configpath)?;
     let config = Config::from_general_path(configpath, true, None)?;
-    break_line();
+
     let mut tags = config.tags();
     tags.sort();
+    break_line();
     for tag in &tags {
         neutral(format!("- {}", tag));
     }

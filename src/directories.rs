@@ -195,7 +195,7 @@ fn full_paths_in_repo(repo: &Repository, id: &str, folder_path: &PathBuf) -> Res
             let subfolder_path = format!(
                 "{}/{}",
                 folder_path.display(),
-                entry.name().expect("Failed to get entry name")
+                entry.name().context("Failed to get entry name")?
             );
             paths.extend(full_paths_in_repo(
                 repo,
@@ -206,7 +206,7 @@ fn full_paths_in_repo(repo: &Repository, id: &str, folder_path: &PathBuf) -> Res
             let full_path = format!(
                 "{}/{}",
                 folder_path.display(),
-                entry.name().expect("Failed to get entry name")
+                entry.name().context("Failed to get entry name")?
             );
             paths.push(PathBuf::from(full_path));
         }
@@ -219,7 +219,9 @@ fn list_files_in_folder(folder_path: &PathBuf) -> Result<Vec<PathBuf>> {
     let full_paths = get_full_paths_in_folder(folder_path)?;
     let mut trimmed = vec![];
     for p in &full_paths {
-        let t = p.strip_prefix(folder_path).unwrap();
+        let t = p
+            .strip_prefix(folder_path)
+            .context("Could not strip prefix from path")?;
         trimmed.push(format_subpath(&t.to_path_buf()));
     }
     Ok(trimmed)
@@ -314,9 +316,9 @@ mod test {
 
     #[test]
     fn print_list() {
-        let list = list_files_in_folder(&PathBuf::from("src")).unwrap();
-        for item in list.iter().map(|p| format_subpath(p)) {
-            println!("{:?}", item);
-        }
+        let list = list_files_in_folder(&PathBuf::from("testing/testfolder")).unwrap();
+        assert_eq!(list.len(), 2);
+        assert!(list.contains(&PathBuf::from("file1.txt")));
+        assert!(list.contains(&PathBuf::from("subfolder/file2.txt")));
     }
 }
