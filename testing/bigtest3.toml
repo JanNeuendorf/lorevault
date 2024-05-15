@@ -2,12 +2,13 @@
 path="file1_now"
 hash = "18C0E2283D3B2DD765489B60C671AA317F4F83777E274950286779694A006D1B"
 sources=["{{SELF_PARENT}}/testrepo#develop:file1"]
+
 [[file]]
 path="file1_before"
 hash = "AFD639D128AE87C9602B12736AF6F47068C57F783920DCF9D887CDBA9753F1C4"
-sources=["{{SELF_PARENT}}/testrepo#develop^:file1"]
+sources=["{{SELF_PARENT}}/testrepo#develop^:file1"] # develop^ should give the commit before the current develop.
 
 [[file]]
 path="file1_head"
 tags=["head"]
-sources=["{{SELF_PARENT}}/testrepo#HEAD:file1"]
+sources=["{{SELF_PARENT}}/testrepo#HEAD:file1"] # HEAD should work just as it does in regular git cli

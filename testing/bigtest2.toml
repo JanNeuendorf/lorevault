@@ -1,4 +1,4 @@
-[variables]
+[variables] # This syntax for variables should also work.
 dracula_git_commit="9ae0fdedd423803f0401f6e7a23cd2bb88c175b2"
 dracula_git_repo="https://github.com/dracula/alacritty"
 alacritty_git_repo="https://github.com/TwiggieSmallz/Default-Alacritty-TOML-Config"
