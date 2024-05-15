@@ -1,22 +1,33 @@
+                                                                                   
+# ██╗      ██████╗ ██████╗ ███████╗██╗   ██╗ █████╗ ██╗   ██╗██╗  ████████╗
+# ██║     ██╔═══██╗██╔══██╗██╔════╝██║   ██║██╔══██╗██║   ██║██║  ╚══██╔══╝
+# ██║     ██║   ██║██████╔╝█████╗  ██║   ██║███████║██║   ██║██║     ██║   
+# ██║     ██║   ██║██╔══██╗██╔══╝  ╚██╗ ██╔╝██╔══██║██║   ██║██║     ██║   
+# ███████╗╚██████╔╝██║  ██║███████╗ ╚████╔╝ ██║  ██║╚██████╔╝███████╗██║   
+# ╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝  ╚═══╝  ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝   
 
-# ██       ██████  ██████  ███████ ██    ██  █████  ██    ██ ██   ████████ 
-# ██      ██    ██ ██   ██ ██      ██    ██ ██   ██ ██    ██ ██      ██    
-# ██      ██    ██ ██████  █████   ██    ██ ███████ ██    ██ ██      ██    
-# ██      ██    ██ ██   ██ ██       ██  ██  ██   ██ ██    ██ ██      ██    
-# ███████  ██████  ██   ██ ███████   ████   ██   ██  ██████  ███████ ██    
-#                                                                          
 
-var.lorevault_github="https://github.com/JanNeuendorf/lorevault.git"
+var.best_black_cat="Freddy"
+
+var.source_of_dracula="https://www.gutenberg.org/cache/epub/345/pg345.txt"
 
 [[file]]
-path="readme.md"
-sources=["{{lorevault_github}}#main:README.md"]
+path="Count_{{best_black_cat}}.txt"
+sources=["{{source_of_dracula}}"]
+
+[[file.edit]]
+type="replace"
+from="Dracula"
+to="{{best_black_cat}}"
+ignore_case=true
+
 [[file.edit]]
 type="insert"
-position="start"
-content="""
+position="prepend"
+content="This version of Dracula is dedicated to {{best_black_cat}}.\n\n"
 
-**This README is for the latest version of Lorevault!**
-
-"""
-
+[[directory]]
+tags=["theme"]
+path="theme_directory/"
+sources=["https://github.com/dracula/alacritty#master:/"]
+ignore_hidden=true 
