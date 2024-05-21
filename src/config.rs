@@ -130,9 +130,11 @@ impl Config {
             .variables
             .keys()
             .into_iter()
-            .any(|k| k.starts_with("SELF_"))
+            .any(|k| k.starts_with("SELF_") || k.starts_with("#") || k.starts_with("!"))
         {
-            return Err(format_err!("Variables starting with SELF_ are protected."));
+            return Err(format_err!(
+                "Variables starting with SELF_,! or # are protected."
+            ));
         }
 
         let mut vars = self.variables.clone();
