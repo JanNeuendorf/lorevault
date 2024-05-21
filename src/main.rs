@@ -108,7 +108,7 @@ fn sync_folder(
     skip_fist: bool,
 ) -> Result<()> {
     if let (Ok(c_output), Ok(cwd)) = (output.canonicalize(), std::env::current_dir()) {
-        if c_output == cwd {
+        if c_output == cwd && !skip_fist {
             return Err(format_err!(
                 "This would overwrite your current working directory!"
             ));
