@@ -1,0 +1,6 @@
+
+[[directory]]
+path="local"
+sources=["{{SELF_ROOT}}/testfolder"]
+tags=["tag_1","Default"] # We can not have a tag starting with ! or just be the word default.
+

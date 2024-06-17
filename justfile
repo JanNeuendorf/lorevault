@@ -40,7 +40,7 @@ release:
     cargo_pkgid=$(cargo pkgid)
     crate_id=$(echo "$cargo_pkgid" | cut -d "#" -f2)
     name=lorevault-$crate_id-x86_64-linux
-    just clean test build build_musl
+    just fmt clean test build build_musl
     cp target/x86_64-unknown-linux-musl/release/lorevault releases/$name
     just output_contains "./releases/$name -V" "$crate_id"
 
@@ -177,6 +177,9 @@ make_test_repo:
 
     # The "count" of a folder does not match its actual contents.
     just error_contains "{{test_prefix}} sync testing/failure4.toml tmpfolder/" "Expected 5 files"
+
+    # A tag contains ! or default
+    just error_contains "{{test_prefix}} sync testing/failure5.toml tmpfolder/" "A tag can not be named "
 
 # This config makes some edits to a file. 
 # The test is here to ensure that the edits always produce the same output.

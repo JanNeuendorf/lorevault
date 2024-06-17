@@ -194,13 +194,16 @@ impl Config {
         new.content = new.content.set_variables(&vars)?;
         new.directories = new.directories.set_variables(&vars)?;
         new.inclusions = new.inclusions.set_variables(&vars)?;
-        Ok(Self {
+        let conf = Self {
             variables: new.variables,
             variables_set: true,
             content: new.content,
             inclusions: new.inclusions,
             directories: new.directories,
-        })
+        };
+        // This is a little ugly and the validation might be missed.
+        validate_tags(&conf.tags())?;
+        Ok(conf)
     }
 
     pub fn tags(&self) -> Vec<String> {
@@ -217,6 +220,7 @@ impl Config {
         for d in &self.directories {
             taglists.push(d.get_tags());
         }
+
         vecset(taglists)
     }
 }
@@ -341,6 +345,22 @@ impl Inclusion {
 
         Ok(files)
     }
+}
+
+// We don't want tags to start with a ! or be a variant of the word default.
+
+fn validate_tags(tags: &Vec<String>) -> Result<()> {
+    for t in tags {
+        if t.starts_with("!") {
+            return Err(format_err!(
+                "Tag names can not start with an exclamation mark."
+            ));
+        }
+        if t.trim().to_lowercase() == "default".to_string() {
+            return Err(format_err!("A tag can not be named \"default\""));
+        }
+    }
+    Ok(())
 }
 
 // This can be used to check for recursion in the inclusions.
