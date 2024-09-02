@@ -98,6 +98,9 @@ Submodules are not supported!
 #### URLs
 You can give a URL starting with `http` or `https`. It must return a file-response and there is no support for authentication or caching. 
 
+#### Files on a different machine
+The syntax `user@machine:some/file` loads the file over sftp. The default port is 22.
+
 #### Text
 We can specify the contents of the file as text. For this, we need a slightly different `.toml` syntax:
 ```toml 
