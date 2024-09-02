@@ -14,9 +14,12 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 use sha3::{Digest, Sha3_256};
+use ssh2::Session;
 use std::{
     collections::{HashMap, HashSet},
     fmt, fs,
+    io::prelude::*,
+    net::TcpStream,
     path::PathBuf,
     process::exit,
     time::Duration,

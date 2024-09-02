@@ -8,6 +8,13 @@ pub enum FileSource {
     Local { path: PathBuf },
     #[serde(rename = "http")]
     Download { url: String },
+    #[serde(rename = "sftp")]
+    Sftp {
+        user: String,
+        service: String,
+        path: PathBuf,
+        port: Option<usize>,
+    },
     #[serde(rename = "git")]
     Git {
         repo: String,
@@ -29,6 +36,12 @@ impl fmt::Display for FileSource {
         match self {
             FileSource::Local { path } => write!(f, "{}", path.display()),
             FileSource::Download { url } => write!(f, "{}", url),
+            FileSource::Sftp {
+                user,
+                service,
+                path,
+                ..
+            } => write!(f, "{}@{}:{}", user, service, path.display()),
             FileSource::Git { repo, id, path } => write!(f, "{}#{}:{}", repo, id, path.display()),
             FileSource::Text { .. } => write!(f, "Custom text"),
 
@@ -73,6 +86,12 @@ impl FileSource {
                 path,
             } => get_git_file(commit, path, repo),
             FileSource::Text { content, .. } => Ok(content.clone().into_bytes()),
+            FileSource::Sftp {
+                user,
+                service,
+                path,
+                port,
+            } => get_file_over_sftp(user, service, path, *port),
         }
     }
 }
@@ -237,6 +256,35 @@ fn fetch_repo_from_cache(url: &str) -> Result<Repository> {
     Err(format_err!("Not found in cache {}", url))
 }
 
+fn get_file_over_sftp(
+    user: &str,
+    service: &str,
+    path: &PathBuf,
+    port: Option<usize>,
+) -> Result<Vec<u8>> {
+    let spinner = ProgressBar::new_spinner();
+    spinner.set_style(
+        ProgressStyle::default_spinner()
+            .template("{spinner:.green}{spinner:.green} {msg}")
+            .context("Failed because progress bar")?,
+    );
+    spinner.set_message(format!("loading: {}@{}:{}", user, service, path.display()));
+    spinner.enable_steady_tick(Duration::from_millis(50));
+
+    let port = port.unwrap_or(22);
+    let tcp = TcpStream::connect(format!("{}:{}", service, port))?;
+    let mut sess = Session::new()?;
+    sess.set_tcp_stream(tcp);
+    sess.handshake()?;
+    sess.userauth_agent(user)?;
+    let sftp = sess.sftp()?;
+    let mut remote_file = sftp.open(path)?;
+    let mut contents = Vec::new();
+    remote_file.read_to_end(&mut contents)?;
+    spinner.finish_with_message(format!("loaded: {}@{}:{}", user, service, path.display()));
+    Ok(contents)
+}
+
 pub fn format_subpath(subpath: &PathBuf) -> PathBuf {
     match subpath.strip_prefix("/") {
         Ok(p) => p.to_path_buf(),
@@ -244,7 +292,33 @@ pub fn format_subpath(subpath: &PathBuf) -> PathBuf {
     }
 }
 
+fn parse_sftp(sftp_url: &str) -> Result<(String, String, String)> {
+    let parts: Vec<&str> = sftp_url.split('@').collect();
+    if parts.len() != 2 {
+        return Err(format_err!("invalid ssh string"));
+    }
+    let user = parts[0].to_string();
+
+    let service_and_path: Vec<&str> = parts[1].splitn(2, ':').collect();
+    if service_and_path.len() != 2 {
+        return Err(format_err!("invalid ssh string"));
+    }
+    let service = service_and_path[0].to_string();
+    let path = service_and_path[1].to_string();
+
+    Ok((user, service, path))
+}
+
 fn parse_auto_source(auto: &str) -> Result<FileSource> {
+    if !is_repo(auto) && !is_url(auto) && auto.contains("@") && auto.contains(":") {
+        let (user, service, path) = parse_sftp(auto)?;
+        return Ok(FileSource::Sftp {
+            user,
+            service,
+            path: PathBuf::from(path),
+            port: None,
+        });
+    }
     if is_url(auto) && !is_repo(auto) {
         return Ok(FileSource::Download {
             url: auto.to_string(),
@@ -264,6 +338,15 @@ mod test {
                 repo: "repo".to_string(),
                 id: "eaf33129cdee0501af69c04c8d4068c5bf6cbfe1".to_string(),
                 path: PathBuf::from("path")
+            }
+        );
+        assert_eq!(
+            parse_auto_source("username@service.com:some/path").unwrap(),
+            FileSource::Sftp {
+                user: "username".to_string(),
+                service: "service.com".to_string(),
+                path: PathBuf::from("some/path"),
+                port: None
             }
         );
     }

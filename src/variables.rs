@@ -70,6 +70,17 @@ impl VariableCompletion for FileSource {
                 let rb_commit = commit.to_owned().required_variables()?;
                 Ok(vecset(vec![rb_repo, rb_commit, rb_path]))
             }
+            FileSource::Sftp {
+                user,
+                service,
+                path,
+                ..
+            } => {
+                let rb_path = path.to_owned().required_variables()?;
+                let rb_user = user.to_owned().required_variables()?;
+                let rb_service = service.to_owned().required_variables()?;
+                Ok(vecset(vec![rb_service, rb_user, rb_path]))
+            }
             FileSource::Local { path } => path.to_owned().required_variables(),
             FileSource::Text {
                 content,
@@ -97,6 +108,17 @@ impl VariableCompletion for FileSource {
                 repo: repo.set_single_variable(key, value)?,
                 id: commit.set_single_variable(key, value)?,
                 path: path.set_single_variable(key, value)?,
+            },
+            FileSource::Sftp {
+                user,
+                service,
+                path,
+                port,
+            } => FileSource::Sftp {
+                user: user.set_single_variable(key, value)?,
+                service: service.set_single_variable(key, value)?,
+                path: path.set_single_variable(key, value)?,
+                port: *port,
             },
             FileSource::Local { path } => FileSource::Local {
                 path: path.set_single_variable(key, value)?,
