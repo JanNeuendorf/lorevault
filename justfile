@@ -41,7 +41,6 @@ release:
     crate_id=$(echo "$cargo_pkgid" | cut -d "#" -f2)
     name=lorevault-$crate_id-x86_64-linux
     just fmt clean test build build_musl
-    -mkdir releases
     cp target/x86_64-unknown-linux-musl/release/lorevault releases/$name
     just output_contains "./releases/$name -V" "$crate_id"
 
