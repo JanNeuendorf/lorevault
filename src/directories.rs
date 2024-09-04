@@ -163,8 +163,13 @@ impl DirSource {
 }
 
 fn list_files_in_repo(repo: &Repository, id: &str, folder_path: &PathBuf) -> Result<Vec<PathBuf>> {
-    let mut full_paths = full_paths_in_repo(repo, id, folder_path)?;
-    let to_remove = format_subpath(folder_path);
+    let folder_path = match folder_path.strip_prefix("/") {
+        Ok(s) => s,
+        _ => folder_path,
+    }
+    .to_owned();
+    let mut full_paths = full_paths_in_repo(repo, id, &folder_path)?;
+    let to_remove = format_subpath(&folder_path);
     for p in &mut full_paths {
         *p = p.strip_prefix(&to_remove)?.to_path_buf();
     }
