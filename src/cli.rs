@@ -143,7 +143,7 @@ pub fn get_confirmation_skip_level(folder_path: &PathBuf, tracked_paths: &Vec<Pa
         "All paths starting with:\n{}\nWill be overwritten!\nIs that OK?",
         list
     );
-    let status = match Confirm::new().with_prompt(prompt).interact() {
+    let status = match Confirm::new().with_prompt(prompt).report(false).interact() {
         Ok(true) => true,
         _ => false,
     };
