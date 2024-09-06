@@ -46,6 +46,25 @@ pub enum Commands {
         )]
         no_confirm: bool,
     },
+    #[command(about = "Shortcut for syncing to ~/.config with -S")]
+    Config {
+        #[arg(help = "Config file", long_help = "Supports repo#id:path")]
+        file: String,
+        #[arg(
+            short,
+            long,
+            use_value_delimiter(true),
+            long_help = "Tags must be defined in the configuration file"
+        )]
+        tags: Vec<String>,
+        #[arg(
+            long,
+            short = 'Y',
+            default_value = "false",
+            help = "Overwrite target directory without confirmation"
+        )]
+        no_confirm: bool,
+    },
     #[command(about = "Writes out an example configuration file", alias = "init")]
     Example {},
     #[command(about = "Prints the SHA3-256 hash of a file")]

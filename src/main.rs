@@ -7,6 +7,7 @@ use clap::{Parser, Subcommand};
 use colored::*;
 use ctrlc;
 use dialoguer::Confirm;
+use dirs::config_dir;
 use git2::{Oid, Repository};
 use indicatif::{ProgressBar, ProgressStyle};
 use once_cell::sync::OnceCell;
@@ -17,6 +18,7 @@ use sha3::{Digest, Sha3_256};
 use ssh2::Session;
 use std::{
     collections::{HashMap, HashSet},
+    env::consts::OS,
     fmt, fs,
     io::prelude::*,
     net::TcpStream,
@@ -87,6 +89,11 @@ fn main() {
             no_confirm,
             skip_first_level,
         } => sync_folder(output, file, tags, *no_confirm, *skip_first_level),
+        Commands::Config {
+            file,
+            tags,
+            no_confirm,
+        } => sync_dotconf(file, tags, *no_confirm),
         Commands::Example {} => write_example_config(),
         Commands::Hash { file } => print_hash(file),
         Commands::Tags { file } => print_tags(file),
@@ -142,6 +149,16 @@ fn sync_folder(
         memfolder.write_to_folder_skip_first(output)?;
         Ok(())
     }
+}
+
+fn sync_dotconf(config_path: &str, tags: &Vec<String>, no_confirm: bool) -> Result<()> {
+    if OS != "linux" {
+        return Err(format_err!(
+            "Detecting the config-directory is currently only supported on linux."
+        ));
+    }
+    let dotconf = config_dir().context("Could not detect config directory")?;
+    sync_folder(&dotconf, config_path, tags, no_confirm, true)
 }
 
 fn write_example_config() -> Result<()> {

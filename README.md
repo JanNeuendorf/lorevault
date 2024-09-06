@@ -273,6 +273,21 @@ What will happen when running `sync -S` is the following:
 Unless we use the `-Y` option, we will get a list of all controlled paths for confirmation.
 
 
+## Config management
+
+On linux you can use the subcommand
+
+```sh
+lorevault config config.toml
+```
+This will find `~/.config` and sync to it with the `-S` option. 
+
+
+
+
+
+
+
 ## Limitations
 
 - It only works on Unix systems. (Only tested on Linux.)
