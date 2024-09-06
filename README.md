@@ -283,7 +283,18 @@ lorevault config config.toml
 This will find `~/.config` and sync to it with the `-S` option. 
 
 
+## Fetching a single source 
 
+You can look at the contents of a single file with
+
+```sh
+lorevault show some/file
+```
+This simply prints the contents of the file to standard output. 
+The advantage is that it also works with `repo#id:path/to/file` and `user@machine:path/to/file`, 
+so it can be used in scripts where you don't know what kind of source will be used.
+It assumes that the contents are `utf-8` encoded.
+If you want to write binary contents to a file, use the `-o` option instead of a pipe. 
 
 
 
