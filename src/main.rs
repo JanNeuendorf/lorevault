@@ -94,6 +94,7 @@ fn main() {
             tags,
             no_confirm,
         } => sync_dotconf(file, tags, *no_confirm),
+        Commands::Show { source, output } => show(source, output),
         Commands::Example {} => write_example_config(),
         Commands::Hash { file } => print_hash(file),
         Commands::Tags { file } => print_tags(file),
@@ -106,7 +107,10 @@ fn main() {
         red(format!("Error: {}", e));
         exit(1)
     } else {
-        green("Operation completed")
+        match &cli.command {
+            Commands::Show { output: None, .. } => {}
+            _ => green("Operation completed"),
+        }
     }
 }
 
@@ -159,6 +163,18 @@ fn sync_dotconf(config_path: &str, tags: &Vec<String>, no_confirm: bool) -> Resu
     }
     let dotconf = config_dir().context("Could not detect config directory")?;
     sync_folder(&dotconf, config_path, tags, no_confirm, true)
+}
+
+fn show(source: &String, output: &Option<PathBuf>) -> Result<()> {
+    let content = FileSource::Auto(source.clone()).fetch()?;
+    match output {
+        None => {
+            let text = String::from_utf8(content)?;
+            print!("{}", text);
+        }
+        Some(file) => fs::write(file, content)?,
+    }
+    Ok(())
 }
 
 fn write_example_config() -> Result<()> {

@@ -82,6 +82,16 @@ pub enum Commands {
         )]
         tags: Vec<String>,
     },
+    #[command(about = "Shows the contents of a single source (as utf8)")]
+    Show {
+        source: String,
+        #[arg(
+            short,
+            help = "Writes the contents to a file instead of printing them",
+            long_help = "Writes the contents to a file instead of printing them. This should be used for non-utf8 files instead of a pipe"
+        )]
+        output: Option<PathBuf>,
+    },
 }
 
 // A "general_path" is a string that might be a path or repo#id:subpath
