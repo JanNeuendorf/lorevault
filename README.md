@@ -191,8 +191,9 @@ Variables are not shared between files. Tags for included files can only be acti
 
  You can specify the hash of the included `.toml` file itself.
 
-
 The behavior should be the same as building the directory with the required tags first and then including it. 
+
+There is currently no check for cyclic dependencies.
 
 ### Relative Paths
 In general, relative paths are not allowed inside config files.

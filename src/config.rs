@@ -361,38 +361,3 @@ fn validate_tags(tags: &Vec<String>) -> Result<()> {
     }
     Ok(())
 }
-
-// This can be used to check for recursion in the inclusions.
-// It must be manually called and checked before loading the config file.
-pub fn check_recursion(cfg: &str) -> Result<()> {
-    let mut next_deps = vec![cfg.to_string()];
-    #[allow(unused)]
-    for i in 0..INCLUSION_RECURSION_LIMIT {
-        next_deps = get_next_inclusion_level(&next_deps)?;
-
-        if next_deps.len() == 0 {
-            return Ok(());
-        }
-    }
-
-    Err(format_err!(
-        "The inclusions are too deep (max depth={}) or recursive.",
-        INCLUSION_RECURSION_LIMIT
-    ))
-}
-// This is just a helper function to check if the inclusions might be recursive
-fn get_next_inclusion_level(cfgs: &Vec<String>) -> Result<Vec<String>> {
-    let mut tmp = vec![];
-
-    for cfg in cfgs {
-        let allow_local = tmp.len() == 0;
-        tmp.push(
-            Config::from_general_path(cfg, allow_local, None)?
-                .inclusions
-                .iter()
-                .map(|inc| inc.config.to_string())
-                .collect::<Vec<String>>(),
-        );
-    }
-    Ok(vecset(tmp))
-}

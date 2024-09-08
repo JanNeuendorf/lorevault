@@ -45,7 +45,6 @@ use {cli::*, config::*, directories::*, edits::*, memfolder::*, sources::*, vari
 //constants
 //------------------------------------------------------------
 pub static CACHEDIR: OnceCell<TempDir> = OnceCell::new();
-const INCLUSION_RECURSION_LIMIT: usize = 20; // The depth of inclusions of other config files.
 
 fn main() {
     let cli = Cli::parse();
@@ -173,7 +172,6 @@ fn print_hash(path: &str) -> Result<()> {
     Ok(())
 }
 fn print_tags(configpath: &str) -> Result<()> {
-    check_recursion(configpath)?;
     let config = Config::from_general_path(configpath, true, None)?;
 
     let mut tags = config.tags();
@@ -187,7 +185,6 @@ fn print_tags(configpath: &str) -> Result<()> {
 }
 
 fn get_active_paths(configpath: &str, tags: &Vec<String>) -> Result<Vec<PathBuf>> {
-    check_recursion(configpath)?;
     let config = Config::from_general_path(configpath, true, None)?;
     let mut active_paths = config
         .get_active(tags)?
