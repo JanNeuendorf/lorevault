@@ -25,8 +25,6 @@ build: test
 install:
     cargo install --path="{{justfile_directory()}}"
 
-install_debug:
-    cargo install --path="{{justfile_directory()}}" --features=debug
 
 # This should result in a statically linked binary. Sometimes musl builds fail the first time.
 build_musl: test

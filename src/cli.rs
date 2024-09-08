@@ -6,14 +6,6 @@ use crate::*;
 pub struct Cli {
     #[command(subcommand)]
     pub command: Commands,
-    #[cfg(feature = "debug")]
-    #[arg(
-        short,
-        long,
-        default_value = "false",
-        help = "Show some additional debug information."
-    )]
-    pub debug: bool,
 }
 
 #[derive(Subcommand, Debug)]

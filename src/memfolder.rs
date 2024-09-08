@@ -23,7 +23,6 @@ impl MemFolder {
             if let (Some(reqhash), Ok(content)) = (&item.hash, fs::read(ref_path)) {
                 let hash = compute_hash(&content);
                 if &hash == reqhash {
-                    info!("Retrieved {} from reference.", item.get_path().display());
                     memfolder.0.insert(
                         item.get_path().clone(),
                         item.from_reference_unchecked(&content, tags)?,

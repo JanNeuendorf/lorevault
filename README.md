@@ -329,7 +329,7 @@ If you want to write binary contents to a file, use the `-o` option instead of a
 
 There are a few tests in the `justfile` to get started. 
 It is, however, very hard to test alone. 
-I am thankful for every bug report. You can compile with `--features=debug` and then run the program with the flag `-d` to get additional debug chatter. 
+I am thankful for every bug report.
 
 
 

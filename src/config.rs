@@ -108,7 +108,6 @@ impl Config {
         hash: Option<&str>,
     ) -> Result<Self> {
         let source = cli::source_from_string_simple(general_path)?;
-        info!("Loading config from source {:?}", source);
         Self::from_filesource(&source, allow_local, hash)
     }
     #[allow(unused)] // This is handy if one wants to see what a new field looks like in a .toml file.
@@ -190,7 +189,7 @@ impl Config {
             }
         }
         vars = resolve_variable_inter_refs(&vars)?;
-        info!("Variables in {:?}: {:?} ", source, vars);
+
         new.content = new.content.set_variables(&vars)?;
         new.directories = new.directories.set_variables(&vars)?;
         new.inclusions = new.inclusions.set_variables(&vars)?;
@@ -369,9 +368,8 @@ pub fn check_recursion(cfg: &str) -> Result<()> {
     let mut next_deps = vec![cfg.to_string()];
     #[allow(unused)]
     for i in 0..INCLUSION_RECURSION_LIMIT {
-        info!("Looking for recursions {} levels deep", i);
         next_deps = get_next_inclusion_level(&next_deps)?;
-        info!("Found {} dependencies.", next_deps.len());
+
         if next_deps.len() == 0 {
             return Ok(());
         }

@@ -35,5 +35,3 @@ opt-level = 3
 strip = true 
 lto = true
 
-[features]
-debug =["tracing","tracing-subscriber"]

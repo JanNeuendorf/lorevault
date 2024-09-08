@@ -57,7 +57,6 @@ impl Directory {
         let mut files: Vec<File> = vec![];
         for subpath in list {
             if self.ignore_hidden && subpath.display().to_string().starts_with(".") {
-                info!("Ignoring hidden file {:?}", subpath);
                 continue;
             }
             files.push(File {

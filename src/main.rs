@@ -29,10 +29,6 @@ use std::{
 use tempfile::TempDir;
 use termion::terminal_size;
 
-// Tracing is only used with the debug feature
-#[cfg(feature = "debug")]
-use {tracing::Level, tracing_subscriber::FmtSubscriber};
-
 //------------------------------------------------------------
 //Internal dependencies
 //------------------------------------------------------------
@@ -51,26 +47,8 @@ use {cli::*, config::*, directories::*, edits::*, memfolder::*, sources::*, vari
 pub static CACHEDIR: OnceCell<TempDir> = OnceCell::new();
 const INCLUSION_RECURSION_LIMIT: usize = 20; // The depth of inclusions of other config files.
 
-//info!() does nothing if --features=debug is not active.
-#[macro_export]
-macro_rules! info {
-    ($($arg:tt)*) => {{
-        #[cfg(feature = "debug")]
-        tracing::info!($($arg)*);
-    }};
-}
-
 fn main() {
     let cli = Cli::parse();
-    #[cfg(feature = "debug")]
-    if cli.debug {
-        let subscriber = FmtSubscriber::builder()
-            .with_max_level(Level::TRACE)
-            .finish();
-        tracing::subscriber::set_global_default(subscriber)
-            .expect("Could not initialize output for verbose mode.");
-        info!("{:?}", &cli);
-    }
     ctrlc::set_handler(move || {
         if let Err(_) = clean_cache_dir() {
             red("Canceled. Cache directory could not be cleaned up");
@@ -135,21 +113,15 @@ fn sync_folder(
             ));
         }
     }
-    info!(
-        "Want to load config from {:?}",
-        cli::source_from_string_simple(config_path)
-    );
-    info!("Checking for recursion");
-    check_recursion(config_path)?;
-    info!("No recursion found");
+
     let conf = Config::from_general_path(config_path, true, None)?;
-    info!("Parsed config file");
+
     let memfolder = MemFolder::load_first_valid_with_ref(&conf, tags, &output)?;
     if !skip_fist {
         if !no_confirm && output.exists() && !get_confirmation(output, memfolder.0.keys().count()) {
             return Err(format_err!("Folder overwrite not confirmed."));
         }
-        info!("Trying to create folder");
+
         memfolder.write_to_folder(output)?;
         Ok(())
     } else {
