@@ -280,7 +280,24 @@ On linux you can use the subcommand
 ```sh
 lorevault config config.toml
 ```
-This will find `~/.config` and sync to it with the `-S` option. 
+This will find `~/.config` and sync to it with the `-S` option.
+
+Of course this can also be used to load someone elses dotfiles if they host a lorevault file on their git.
+
+## Cleaning up
+
+Especially if we use this in a script, we might want to undo the sync operation. 
+The subcommand `clean` takes the same arguments as `sync` and it deletes all paths that were synced.
+If we did not pass the `-S` option, the operation can be undone by removing the directory, so that is all that it does. If `-S` is used however, it finds all the paths that the corresponding `sync` command would have altered and deletes them. 
+
+There is one **potential risk** when using this command: the list of paths controlled by the config file might have changed since the `sync` command was run. This could have happened for three reasons:
+1. The `.toml` file itself has changed.
+2. An included file has changed. 
+3. An included directory has changed. 
+
+Issues can be avoided by not referring to local files or directories and by not using git-IDs like `branch-name` or `HEAD`, which can change. 
+
+
 
 
 ## Fetching a single source 

@@ -295,9 +295,14 @@ fn clean_command(
                 _ => return Err(format_err!("Not confirmed")),
             };
         }
+
         for f in to_delete {
+            if !f.exists() {
+                yellow(format!("Skipping missing path {}", f.display()));
+                continue;
+            }
             if f.is_file() {
-                fs::remove_file(f)?;
+                _ = fs::remove_file(f)?;
             } else {
                 fs::remove_dir_all(f)?;
             }
