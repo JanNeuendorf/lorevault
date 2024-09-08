@@ -178,7 +178,11 @@ fn print_tags(configpath: &str) -> Result<()> {
     tags.sort();
     break_line();
     for tag in &tags {
-        neutral(format!("- {}", tag));
+        if config.default_tags.contains(tag) {
+            neutral(format!("- {} (default)", tag));
+        } else {
+            neutral(format!("- {}", tag));
+        }
     }
     break_line();
     Ok(())

@@ -18,7 +18,7 @@ pub struct Config {
     #[serde(rename = "directory")]
     directories: Vec<Directory>,
     #[serde(rename = "default", default)]
-    default_tags: Vec<String>,
+    pub default_tags: Vec<String>,
 }
 
 impl Config {
@@ -41,7 +41,7 @@ impl Config {
         let negative_tags = given_tags
             .iter()
             .filter(|t| t.starts_with("!"))
-            .map(|t| t.to_string())
+            .map(|t| t.strip_prefix("!").expect("could not remove !").to_string())
             .collect::<Vec<_>>();
 
         for nt in &negative_tags {
