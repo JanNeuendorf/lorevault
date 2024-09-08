@@ -89,6 +89,13 @@ fn main() {
             no_confirm,
             skip_first_level,
         } => sync_folder(output, file, tags, *no_confirm, *skip_first_level),
+        Commands::Clean {
+            output,
+            file,
+            tags,
+            no_confirm,
+            skip_first_level,
+        } => clean_command(file, output, tags, *skip_first_level, *no_confirm),
         Commands::Config {
             file,
             tags,
@@ -207,7 +214,7 @@ fn print_tags(configpath: &str) -> Result<()> {
     Ok(())
 }
 
-fn print_list(configpath: &str, tags: &Vec<String>) -> Result<()> {
+fn get_active_paths(configpath: &str, tags: &Vec<String>) -> Result<Vec<PathBuf>> {
     check_recursion(configpath)?;
     let config = Config::from_general_path(configpath, true, None)?;
     let mut active_paths = config
@@ -226,12 +233,77 @@ fn print_list(configpath: &str, tags: &Vec<String>) -> Result<()> {
         }
         a_components.len().cmp(&b_components.len())
     });
+    Ok(active_paths)
+}
+
+fn print_list(configpath: &str, tags: &Vec<String>) -> Result<()> {
+    let active_paths = get_active_paths(configpath, tags)?;
     break_line();
     for path in active_paths {
         neutral(format!("- {}", path.display()));
     }
     break_line();
     Ok(())
+}
+
+fn clean_command(
+    configpath: &str,
+    output: &PathBuf,
+    tags: &Vec<String>,
+    skip_first: bool,
+    no_confirm: bool,
+) -> Result<()> {
+    if !skip_first {
+        if !no_confirm {
+            let prompt = format!(
+                "This will delete the directory {}",
+                output.to_string_lossy(),
+            );
+            match Confirm::new().with_prompt(prompt).interact() {
+                Ok(true) => {}
+                _ => return Err(format_err!("Not confirmed")),
+            };
+        }
+        fs::remove_dir_all(output)?;
+        return Ok(());
+    } else {
+        let all_paths = get_active_paths(configpath, tags)?;
+        if !all_paths.iter().all(|p| p.is_relative()) {
+            return Err(format_err!(
+                "List of paths to delete contains absolute path"
+            ));
+        }
+        let to_delete = vecset(vec![all_paths
+            .iter()
+            .map(|rel| {
+                output.join(
+                    rel.iter()
+                        .next()
+                        .expect("Encountered empty path in deletion"),
+                )
+            })
+            .collect::<Vec<_>>()]);
+        if !no_confirm {
+            let list = to_delete
+                .iter()
+                .map(|f| format!("- {}", f.display()))
+                .collect::<Vec<String>>()
+                .join("\n");
+            let prompt = format!("The paths:\n{}\nWill be deleted!\nIs that OK?", list);
+            match Confirm::new().with_prompt(prompt).report(false).interact() {
+                Ok(true) => {}
+                _ => return Err(format_err!("Not confirmed")),
+            };
+        }
+        for f in to_delete {
+            if f.is_file() {
+                fs::remove_file(f)?;
+            } else {
+                fs::remove_dir_all(f)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 fn clean_cache_dir() -> Result<()> {

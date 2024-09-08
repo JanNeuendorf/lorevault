@@ -46,6 +46,34 @@ pub enum Commands {
         )]
         no_confirm: bool,
     },
+    #[command(about = "Remove files controlled by corresponding sync operation")]
+    Clean {
+        #[arg(help = "Config file", long_help = "Supports repo#id:path")]
+        file: String,
+        #[arg(help = "Destination directory")]
+        output: PathBuf,
+        #[arg(
+            short,
+            long,
+            use_value_delimiter(true),
+            long_help = "Tags must be defined in the configuration file"
+        )]
+        tags: Vec<String>,
+        #[arg(
+            long,
+            short = 'S',
+            default_value = "false",
+            help = "Ignore paths differing at the first level"
+        )]
+        skip_first_level: bool,
+        #[arg(
+            long,
+            short = 'Y',
+            default_value = "false",
+            help = "Overwrite target directory without confirmation"
+        )]
+        no_confirm: bool,
+    },
     #[command(about = "Shortcut for syncing to ~/.config with -S")]
     Config {
         #[arg(help = "Config file", long_help = "Supports repo#id:path")]
