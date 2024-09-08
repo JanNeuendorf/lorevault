@@ -17,7 +17,7 @@ clean: test_clean
 
 test: fmt
     cargo test
-    just example_test bigtest1 bigtest2 bigtest3 failure_tests edits_test 
+    just example_test bigtest1 bigtest2 bigtest3 failure_tests edits_test show_test clean_command_test
 
 build: test 
     cargo build --release
@@ -186,6 +186,30 @@ make_test_repo:
     just check_hash tmpfolder/rustlings_readme.md F0BC491EBBCA0BA3DF0F6E11CB9C2CA97EFAC84BA2A65C8AFADD0D045AD0B4DE
     {{test_prefix}} sync testing/edits_test.toml tmpfolder --no-confirm -t append
     just check_hash tmpfolder/rustlings_readme.md 88C468F15606A5BD5EADA0F0475991A2FC01ACA8032BBC5A254CC74D6AA1274A
+
+# Test the show command 
+@show_test: test_clean
+    -mkdir tmpfolder 
+    {{test_prefix}} show https://github.com/dracula/alacritty#9ae0fdedd423803f0401f6e7a23cd2bb88c175b2:dracula.toml > tmpfolder/piped
+    {{test_prefix}} show https://github.com/dracula/alacritty#9ae0fdedd423803f0401f6e7a23cd2bb88c175b2:dracula.toml -o tmpfolder/saved
+    diff tmpfolder/piped tmpfolder/saved
+
+# Test the clean command (don't confuse with test_clean)
+@clean_command_test: test_clean
+    -rm -r tmpfolder
+    mkdir tmpfolder
+    echo "some text" > tmpfolder/newfile 
+    {{test_prefix}} sync testing/bigtest2.toml tmpfolder --no-confirm -t pink -S
+    just output_contains "cat tmpfolder/newfile" "some text"
+    just count_folder tmpfolder 3
+    {{test_prefix}} clean testing/bigtest2.toml tmpfolder --no-confirm  -S
+    just count_folder tmpfolder 2
+    {{test_prefix}} clean testing/bigtest2.toml tmpfolder --no-confirm  -S -t pink 
+    just count_folder tmpfolder 1
+    {{test_prefix}} clean testing/bigtest2.toml tmpfolder --no-confirm  -t pink 
+    just error_contains "cat tmpfolder/newfile" ""
+    
+
 
 # Check if a folder contains the expected number of items.
 count_folder folder expected:
