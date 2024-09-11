@@ -5,3 +5,7 @@ tags=["main"]
 path="/{{local_var}}/main.rs"
 sources=["{{SELF_ROOT}}/../src/main.rs"]
 
+[[file]]
+path="always_there.rs"
+sources=["{{SELF_ROOT}}/../src/main.rs"]
+

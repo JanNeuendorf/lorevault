@@ -1,0 +1,17 @@
+default=["mydefault"]
+[[include]]
+path="default_include"
+config="{{SELF_ROOT}}/included4.toml"
+tags=["mydefault"]
+
+[[include]]
+path="suppressed_include"
+config="{{SELF_ROOT}}/included4.toml"
+with_tags=["!main"]
+
+
+[[file]]
+path="defaultfile"
+sources=["{{SELF_ROOT}}/../src/main.rs"]
+tags=["mydefault"]
+

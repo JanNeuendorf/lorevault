@@ -17,7 +17,7 @@ clean: test_clean
 
 test: fmt
     cargo test
-    just example_test bigtest1 bigtest2 bigtest3 failure_tests edits_test show_test clean_command_test
+    just example_test bigtest1 bigtest2 bigtest3 failure_tests edits_test show_test clean_command_test default_tags_test
 
 build: test 
     cargo build --release
@@ -208,7 +208,21 @@ make_test_repo:
     just count_folder tmpfolder 1
     {{test_prefix}} clean testing/bigtest2.toml tmpfolder --no-confirm  -t pink 
     just error_contains "cat tmpfolder/newfile" ""
-    
+
+# Test the default tags
+
+@default_tags_test:
+    {{test_prefix}} sync testing/included4.toml tmpfolder -Y
+    just count_folder tmpfolder 2    
+    {{test_prefix}} sync testing/included4.toml tmpfolder -t '!main' -Y
+    just count_folder tmpfolder 1    
+    {{test_prefix}} sync testing/default_tags.toml tmpfolder -Y
+    just count_folder tmpfolder 3    
+    just count_folder tmpfolder/default_include 2    
+    just count_folder tmpfolder/suppressed_include 1    
+    {{test_prefix}} sync testing/default_tags.toml tmpfolder -Y -t '!mydefault'
+    just count_folder tmpfolder 1    
+
 
 
 # Check if a folder contains the expected number of items.
