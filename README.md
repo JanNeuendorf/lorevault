@@ -195,6 +195,28 @@ The behavior should be the same as building the directory with the required tags
 
 There is currently no check for cyclic dependencies.
 
+### Default Tags
+We can specify tags that are activated by default. 
+For this, we just need to put:
+```toml
+default=["some_tag","some_other_tag"]
+```
+in the configuration file.
+
+If we then want to deactivate the tag, we can do it with an exclamation mark:
+```sh
+lorevault sync myconf.toml mydir -t '!some_tag'
+```
+Note that some shells require single quotes to prevent `!` to be read as a special character. 
+To avoid confusion, tags can not start with `!` or be called `default`.
+
+If we include a `.toml` file, its default tags are active unless they are deactivated with
+```toml
+with_tags=["!my_tag"]
+```
+
+
+
 ### Relative Paths
 In general, relative paths are not allowed inside config files.
 
