@@ -310,9 +310,6 @@ What will happen when running `sync -S` is the following:
 
 Unless we use the `-Y` option, we will get a list of all controlled paths for confirmation.
 
-
-## Dotfile management
-
 On linux you can use the subcommand
 
 ```sh
