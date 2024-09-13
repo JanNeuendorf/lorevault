@@ -22,7 +22,7 @@ To combat those problems, we can use:
 
 While you can be pedantic, you do not have to be, so you can use this for simple **templates**.
 
-**This can also be used to manage your dotfiles.** 
+**This can also be used to manage your dotfiles.** (skip [here](#partially-managing-a-directory))
 
 ## Getting Started
 You can install the latest version using Cargo.
@@ -44,7 +44,22 @@ lorevault sync config.toml targetdir --tags=tag1,tag2
 creates the directory at `targetdir` according to the recipe. 
 The directory is always deleted and recreated. This ensures that there are no subtle changes that can be missed. If the directory existed before, it is used as a reference. If a file has a defined hash and the file in the directory matches it, it can be taken from there.
 
-Other subcommands are `tags` to list the available tags, `list` to list the files that would be created, and `hash` to get the SHA3-256 of a file.
+Other commands are:
+
+```
+Usage: lorevault <COMMAND>
+
+Commands:
+  sync     Sync to a specified directory
+  clean    Remove files controlled by corresponding sync operation
+  config    Shortcut for syncing to ~/.config with -S
+  example  Writes out an example configuration file
+  hash     Prints the SHA3-256 hash of a file
+  tags     Lists all the tags defined in the file
+  list     Lists all the files that would be in the directory
+  show     Shows the contents of a single source (as utf8)
+  help     Print this message or the help of the given subcommand(s)
+```
 
 The configuration file can be read in from a local or remote git-repo with the syntax `repo#id:path`.
 It does not have to be stored in your project's directory.
@@ -53,7 +68,7 @@ It does not have to be stored in your project's directory.
 The config file is a `.toml` file that consists of a list of file descriptions. 
 
 ### Files
-One thing, the config file might include is a list of individual files. 
+We might include individual files in our directory.
 Here is an example:
 
 ```toml
