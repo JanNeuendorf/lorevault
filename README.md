@@ -22,7 +22,7 @@ To combat those problems, we can use:
 
 While you can be pedantic, you do not have to be, so you can use this for simple **templates**.
 
-**This can also be used to manage your dotfiles.** 
+**This can also be used to manage your dotfiles.** (skip [here](#partially-managing-a-directory))
 
 ## Getting Started
 You can install the latest version using Cargo.
@@ -44,7 +44,22 @@ lorevault sync config.toml targetdir --tags=tag1,tag2
 creates the directory at `targetdir` according to the recipe. 
 The directory is always deleted and recreated. This ensures that there are no subtle changes that can be missed. If the directory existed before, it is used as a reference. If a file has a defined hash and the file in the directory matches it, it can be taken from there.
 
-Other subcommands are `tags` to list the available tags, `list` to list the files that would be created, and `hash` to get the SHA3-256 of a file.
+Other commands are:
+
+```
+Usage: lorevault <COMMAND>
+
+Commands:
+  sync     Sync to a specified directory
+  clean    Remove files controlled by corresponding sync operation
+  config    Shortcut for syncing to ~/.config with -S
+  example  Writes out an example configuration file
+  hash     Prints the SHA3-256 hash of a file
+  tags     Lists all the tags defined in the file
+  list     Lists all the files that would be in the directory
+  show     Shows the contents of a single source (as utf8)
+  help     Print this message or the help of the given subcommand(s)
+```
 
 The configuration file can be read in from a local or remote git-repo with the syntax `repo#id:path`.
 It does not have to be stored in your project's directory.
@@ -53,7 +68,7 @@ It does not have to be stored in your project's directory.
 The config file is a `.toml` file that consists of a list of file descriptions. 
 
 ### Files
-One thing, the config file might include is a list of individual files. 
+We might include individual files in our directory.
 Here is an example:
 
 ```toml
@@ -191,8 +206,31 @@ Variables are not shared between files. Tags for included files can only be acti
 
  You can specify the hash of the included `.toml` file itself.
 
-
 The behavior should be the same as building the directory with the required tags first and then including it. 
+
+There is currently no check for cyclic dependencies.
+
+### Default Tags
+We can specify tags that are activated by default. 
+For this, we just need to put:
+```toml
+default=["some_tag","some_other_tag"]
+```
+in the configuration file.
+
+If we then want to deactivate the tag, we can do it with an exclamation mark:
+```sh
+lorevault sync myconf.toml mydir -t '!some_tag'
+```
+Note that some shells require single quotes to prevent `!` to be read as a special character. 
+To avoid confusion, tags can not start with `!` or be called `default`.
+
+If we include a `.toml` file, its default tags are active unless they are deactivated with
+```toml
+with_tags=["!my_tag"]
+```
+
+
 
 ### Relative Paths
 In general, relative paths are not allowed inside config files.
@@ -272,6 +310,46 @@ What will happen when running `sync -S` is the following:
 
 Unless we use the `-Y` option, we will get a list of all controlled paths for confirmation.
 
+On linux you can use the subcommand
+
+```sh
+lorevault config config.toml
+```
+This will find `~/.config` and sync to it with the `-S` option.
+
+Of course this can also be used to load someone elses dotfiles if they host a lorevault file on their git.
+
+## Cleaning up
+
+Especially if we use this in a script, we might want to undo the sync operation. 
+The subcommand `clean` takes the same arguments as `sync` and it deletes all paths that were synced.
+If we did not pass the `-S` option, the operation can be undone by removing the directory, so that is all that it does. If `-S` is used however, it finds all the paths that the corresponding `sync` command would have altered and deletes them. 
+
+There is one **potential risk** when using this command: the list of paths controlled by the config file might have changed since the `sync` command was run. This could have happened for three reasons:
+1. The `.toml` file itself has changed.
+2. An included file has changed. 
+3. An included directory has changed. 
+
+Issues can be avoided by not referring to local files or directories and by not using git-IDs like `branch-name` or `HEAD`, which can change. 
+
+
+
+
+## Fetching a single source 
+
+You can look at the contents of a single file with
+
+```sh
+lorevault show some/file
+```
+This simply prints the contents of the file to standard output. 
+The advantage is that it also works with `repo#id:path/to/file` and `user@machine:path/to/file`, 
+so it can be used in scripts where you don't know what kind of source will be used.
+It assumes that the contents are `utf-8` encoded.
+If you want to write binary contents to a file, use the `-o` option instead of a pipe. 
+
+
+
 
 ## Limitations
 
@@ -286,7 +364,7 @@ Unless we use the `-Y` option, we will get a list of all controlled paths for co
 
 There are a few tests in the `justfile` to get started. 
 It is, however, very hard to test alone. 
-I am thankful for every bug report. You can compile with `--features=debug` and then run the program with the flag `-d` to get additional debug chatter. 
+I am thankful for every bug report.
 
 
 

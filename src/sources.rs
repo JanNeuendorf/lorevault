@@ -138,7 +138,7 @@ pub fn get_commit_from_string(repo: &Repository, input: &str) -> Result<String> 
     ))?;
     if let Some(commit) = obj.as_commit() {
         let commit_string = commit.id().to_string();
-        info!("ID {} matched to commit {}", input, commit_string);
+
         return Ok(commit_string);
     }
 
@@ -225,7 +225,7 @@ pub fn init_cache_dir() -> Result<PathBuf> {
     let tmpdir = TempDir::new()?;
     let path = tmpdir.path().to_path_buf();
     let result = CACHEDIR.set(tmpdir);
-    info!("Cache directory: {:?}", path);
+
     match result {
         Ok(_) => Ok(path),
         Err(td) => Err(format_err!("Could not init cachedir {:?}", td)),

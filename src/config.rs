@@ -17,17 +17,45 @@ pub struct Config {
     #[serde(default)]
     #[serde(rename = "directory")]
     directories: Vec<Directory>,
+    #[serde(rename = "default", default)]
+    pub default_tags: Vec<String>,
 }
 
 impl Config {
     // This gets all files that should be included given the list of tags.
     // It should error if two tagged files or two untagged files have the same path.
     // If an untagged file and a tagged file have the same path, only the tagged one is active.
-    pub fn get_active(&self, tags: &Vec<String>) -> Result<Vec<File>> {
+    pub fn get_active(&self, given_tags: &Vec<String>) -> Result<Vec<File>> {
         if !self.variables_set {
             return Err(format_err!("Variables must have been set to get file list"));
         }
         let defined_tags = self.tags();
+
+        let given_tags = given_tags.iter().map(|t| t.trim()).collect::<Vec<_>>();
+        let positive_tags = given_tags
+            .iter()
+            .filter(|t| !t.starts_with("!"))
+            .map(|t| t.to_string())
+            .collect::<Vec<_>>();
+
+        let negative_tags = given_tags
+            .iter()
+            .filter(|t| t.starts_with("!"))
+            .map(|t| t.strip_prefix("!").expect("could not remove !").to_string())
+            .collect::<Vec<_>>();
+
+        for nt in &negative_tags {
+            if positive_tags.contains(&nt) {
+                return Err(format_err!("You try to negate a tag while activating it"));
+            }
+        }
+
+        let tags = &vecset(vec![self.default_tags.clone(), positive_tags])
+            .iter()
+            .filter(|p| !negative_tags.contains(p))
+            .map(|t| t.to_string())
+            .collect::<Vec<_>>();
+
         for requested_tag in tags {
             if !defined_tags.contains(requested_tag) {
                 return Err(format_err!(
@@ -108,7 +136,6 @@ impl Config {
         hash: Option<&str>,
     ) -> Result<Self> {
         let source = cli::source_from_string_simple(general_path)?;
-        info!("Loading config from source {:?}", source);
         Self::from_filesource(&source, allow_local, hash)
     }
     #[allow(unused)] // This is handy if one wants to see what a new field looks like in a .toml file.
@@ -190,7 +217,7 @@ impl Config {
             }
         }
         vars = resolve_variable_inter_refs(&vars)?;
-        info!("Variables in {:?}: {:?} ", source, vars);
+
         new.content = new.content.set_variables(&vars)?;
         new.directories = new.directories.set_variables(&vars)?;
         new.inclusions = new.inclusions.set_variables(&vars)?;
@@ -200,6 +227,7 @@ impl Config {
             content: new.content,
             inclusions: new.inclusions,
             directories: new.directories,
+            default_tags: self.default_tags.clone(),
         };
         // This is a little ugly and the validation might be missed.
         validate_tags(&conf.tags())?;
@@ -361,40 +389,4 @@ fn validate_tags(tags: &Vec<String>) -> Result<()> {
         }
     }
     Ok(())
-}
-
-// This can be used to check for recursion in the inclusions.
-// It must be manually called and checked before loading the config file.
-pub fn check_recursion(cfg: &str) -> Result<()> {
-    let mut next_deps = vec![cfg.to_string()];
-    #[allow(unused)]
-    for i in 0..INCLUSION_RECURSION_LIMIT {
-        info!("Looking for recursions {} levels deep", i);
-        next_deps = get_next_inclusion_level(&next_deps)?;
-        info!("Found {} dependencies.", next_deps.len());
-        if next_deps.len() == 0 {
-            return Ok(());
-        }
-    }
-
-    Err(format_err!(
-        "The inclusions are too deep (max depth={}) or recursive.",
-        INCLUSION_RECURSION_LIMIT
-    ))
-}
-// This is just a helper function to check if the inclusions might be recursive
-fn get_next_inclusion_level(cfgs: &Vec<String>) -> Result<Vec<String>> {
-    let mut tmp = vec![];
-
-    for cfg in cfgs {
-        let allow_local = tmp.len() == 0;
-        tmp.push(
-            Config::from_general_path(cfg, allow_local, None)?
-                .inclusions
-                .iter()
-                .map(|inc| inc.config.to_string())
-                .collect::<Vec<String>>(),
-        );
-    }
-    Ok(vecset(tmp))
 }

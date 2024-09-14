@@ -7,6 +7,7 @@ use clap::{Parser, Subcommand};
 use colored::*;
 use ctrlc;
 use dialoguer::Confirm;
+use dirs::config_dir;
 use git2::{Oid, Repository};
 use indicatif::{ProgressBar, ProgressStyle};
 use once_cell::sync::OnceCell;
@@ -17,6 +18,7 @@ use sha3::{Digest, Sha3_256};
 use ssh2::Session;
 use std::{
     collections::{HashMap, HashSet},
+    env::consts::OS,
     fmt, fs,
     io::prelude::*,
     net::TcpStream,
@@ -26,10 +28,6 @@ use std::{
 };
 use tempfile::TempDir;
 use termion::terminal_size;
-
-// Tracing is only used with the debug feature
-#[cfg(feature = "debug")]
-use {tracing::Level, tracing_subscriber::FmtSubscriber};
 
 //------------------------------------------------------------
 //Internal dependencies
@@ -47,28 +45,9 @@ use {cli::*, config::*, directories::*, edits::*, memfolder::*, sources::*, vari
 //constants
 //------------------------------------------------------------
 pub static CACHEDIR: OnceCell<TempDir> = OnceCell::new();
-const INCLUSION_RECURSION_LIMIT: usize = 20; // The depth of inclusions of other config files.
-
-//info!() does nothing if --features=debug is not active.
-#[macro_export]
-macro_rules! info {
-    ($($arg:tt)*) => {{
-        #[cfg(feature = "debug")]
-        tracing::info!($($arg)*);
-    }};
-}
 
 fn main() {
     let cli = Cli::parse();
-    #[cfg(feature = "debug")]
-    if cli.debug {
-        let subscriber = FmtSubscriber::builder()
-            .with_max_level(Level::TRACE)
-            .finish();
-        tracing::subscriber::set_global_default(subscriber)
-            .expect("Could not initialize output for verbose mode.");
-        info!("{:?}", &cli);
-    }
     ctrlc::set_handler(move || {
         if let Err(_) = clean_cache_dir() {
             red("Canceled. Cache directory could not be cleaned up");
@@ -87,6 +66,19 @@ fn main() {
             no_confirm,
             skip_first_level,
         } => sync_folder(output, file, tags, *no_confirm, *skip_first_level),
+        Commands::Clean {
+            output,
+            file,
+            tags,
+            no_confirm,
+            skip_first_level,
+        } => clean_command(file, output, tags, *skip_first_level, *no_confirm),
+        Commands::Config {
+            file,
+            tags,
+            no_confirm,
+        } => sync_dotconf(file, tags, *no_confirm),
+        Commands::Show { source, output } => show(source, output),
         Commands::Example {} => write_example_config(),
         Commands::Hash { file } => print_hash(file),
         Commands::Tags { file } => print_tags(file),
@@ -99,7 +91,10 @@ fn main() {
         red(format!("Error: {}", e));
         exit(1)
     } else {
-        green("Operation completed")
+        match &cli.command {
+            Commands::Show { output: None, .. } => {}
+            _ => green("Operation completed"),
+        }
     }
 }
 
@@ -117,21 +112,15 @@ fn sync_folder(
             ));
         }
     }
-    info!(
-        "Want to load config from {:?}",
-        cli::source_from_string_simple(config_path)
-    );
-    info!("Checking for recursion");
-    check_recursion(config_path)?;
-    info!("No recursion found");
+
     let conf = Config::from_general_path(config_path, true, None)?;
-    info!("Parsed config file");
+
     let memfolder = MemFolder::load_first_valid_with_ref(&conf, tags, &output)?;
     if !skip_fist {
         if !no_confirm && output.exists() && !get_confirmation(output, memfolder.0.keys().count()) {
             return Err(format_err!("Folder overwrite not confirmed."));
         }
-        info!("Trying to create folder");
+
         memfolder.write_to_folder(output)?;
         Ok(())
     } else {
@@ -142,6 +131,28 @@ fn sync_folder(
         memfolder.write_to_folder_skip_first(output)?;
         Ok(())
     }
+}
+
+fn sync_dotconf(config_path: &str, tags: &Vec<String>, no_confirm: bool) -> Result<()> {
+    if OS != "linux" {
+        return Err(format_err!(
+            "Detecting the config-directory is currently only supported on linux."
+        ));
+    }
+    let dotconf = config_dir().context("Could not detect config directory")?;
+    sync_folder(&dotconf, config_path, tags, no_confirm, true)
+}
+
+fn show(source: &String, output: &Option<PathBuf>) -> Result<()> {
+    let content = FileSource::Auto(source.clone()).fetch()?;
+    match output {
+        None => {
+            let text = String::from_utf8(content)?;
+            print!("{}", text);
+        }
+        Some(file) => fs::write(file, content)?,
+    }
+    Ok(())
 }
 
 fn write_example_config() -> Result<()> {
@@ -161,21 +172,23 @@ fn print_hash(path: &str) -> Result<()> {
     Ok(())
 }
 fn print_tags(configpath: &str) -> Result<()> {
-    check_recursion(configpath)?;
     let config = Config::from_general_path(configpath, true, None)?;
 
     let mut tags = config.tags();
     tags.sort();
     break_line();
     for tag in &tags {
-        neutral(format!("- {}", tag));
+        if config.default_tags.contains(tag) {
+            neutral(format!("- {} (default)", tag));
+        } else {
+            neutral(format!("- {}", tag));
+        }
     }
     break_line();
     Ok(())
 }
 
-fn print_list(configpath: &str, tags: &Vec<String>) -> Result<()> {
-    check_recursion(configpath)?;
+fn get_active_paths(configpath: &str, tags: &Vec<String>) -> Result<Vec<PathBuf>> {
     let config = Config::from_general_path(configpath, true, None)?;
     let mut active_paths = config
         .get_active(tags)?
@@ -193,12 +206,82 @@ fn print_list(configpath: &str, tags: &Vec<String>) -> Result<()> {
         }
         a_components.len().cmp(&b_components.len())
     });
+    Ok(active_paths)
+}
+
+fn print_list(configpath: &str, tags: &Vec<String>) -> Result<()> {
+    let active_paths = get_active_paths(configpath, tags)?;
     break_line();
     for path in active_paths {
         neutral(format!("- {}", path.display()));
     }
     break_line();
     Ok(())
+}
+
+fn clean_command(
+    configpath: &str,
+    output: &PathBuf,
+    tags: &Vec<String>,
+    skip_first: bool,
+    no_confirm: bool,
+) -> Result<()> {
+    if !skip_first {
+        if !no_confirm {
+            let prompt = format!(
+                "This will delete the directory {}",
+                output.to_string_lossy(),
+            );
+            match Confirm::new().with_prompt(prompt).interact() {
+                Ok(true) => {}
+                _ => return Err(format_err!("Not confirmed")),
+            };
+        }
+        fs::remove_dir_all(output)?;
+        return Ok(());
+    } else {
+        let all_paths = get_active_paths(configpath, tags)?;
+        if !all_paths.iter().all(|p| p.is_relative()) {
+            return Err(format_err!(
+                "List of paths to delete contains absolute path"
+            ));
+        }
+        let to_delete = vecset(vec![all_paths
+            .iter()
+            .map(|rel| {
+                output.join(
+                    rel.iter()
+                        .next()
+                        .expect("Encountered empty path in deletion"),
+                )
+            })
+            .collect::<Vec<_>>()]);
+        if !no_confirm {
+            let list = to_delete
+                .iter()
+                .map(|f| format!("- {}", f.display()))
+                .collect::<Vec<String>>()
+                .join("\n");
+            let prompt = format!("The paths:\n{}\nWill be deleted!\nIs that OK?", list);
+            match Confirm::new().with_prompt(prompt).report(false).interact() {
+                Ok(true) => {}
+                _ => return Err(format_err!("Not confirmed")),
+            };
+        }
+
+        for f in to_delete {
+            if !f.exists() {
+                yellow(format!("Skipping missing path {}", f.display()));
+                continue;
+            }
+            if f.is_file() {
+                _ = fs::remove_file(f)?;
+            } else {
+                fs::remove_dir_all(f)?;
+            }
+        }
+        Ok(())
+    }
 }
 
 fn clean_cache_dir() -> Result<()> {

@@ -6,14 +6,6 @@ use crate::*;
 pub struct Cli {
     #[command(subcommand)]
     pub command: Commands,
-    #[cfg(feature = "debug")]
-    #[arg(
-        short,
-        long,
-        default_value = "false",
-        help = "Show some additional debug information."
-    )]
-    pub debug: bool,
 }
 
 #[derive(Subcommand, Debug)]
@@ -46,6 +38,53 @@ pub enum Commands {
         )]
         no_confirm: bool,
     },
+    #[command(about = "Remove files controlled by corresponding sync operation")]
+    Clean {
+        #[arg(help = "Config file", long_help = "Supports repo#id:path")]
+        file: String,
+        #[arg(help = "Destination directory")]
+        output: PathBuf,
+        #[arg(
+            short,
+            long,
+            use_value_delimiter(true),
+            long_help = "Tags must be defined in the configuration file"
+        )]
+        tags: Vec<String>,
+        #[arg(
+            long,
+            short = 'S',
+            default_value = "false",
+            help = "Ignore paths differing at the first level"
+        )]
+        skip_first_level: bool,
+        #[arg(
+            long,
+            short = 'Y',
+            default_value = "false",
+            help = "Overwrite target directory without confirmation"
+        )]
+        no_confirm: bool,
+    },
+    #[command(about = "Shortcut for syncing to ~/.config with -S")]
+    Config {
+        #[arg(help = "Config file", long_help = "Supports repo#id:path")]
+        file: String,
+        #[arg(
+            short,
+            long,
+            use_value_delimiter(true),
+            long_help = "Tags must be defined in the configuration file"
+        )]
+        tags: Vec<String>,
+        #[arg(
+            long,
+            short = 'Y',
+            default_value = "false",
+            help = "Overwrite target directory without confirmation"
+        )]
+        no_confirm: bool,
+    },
     #[command(about = "Writes out an example configuration file", alias = "init")]
     Example {},
     #[command(about = "Prints the SHA3-256 hash of a file")]
@@ -62,6 +101,16 @@ pub enum Commands {
             long_help = "Tags must be defined in the configuration file"
         )]
         tags: Vec<String>,
+    },
+    #[command(about = "Shows the contents of a single source (as utf8)")]
+    Show {
+        source: String,
+        #[arg(
+            short,
+            help = "Writes the contents to a file instead of printing them",
+            long_help = "Writes the contents to a file instead of printing them. This should be used for non-utf8 files instead of a pipe"
+        )]
+        output: Option<PathBuf>,
     },
 }
 
