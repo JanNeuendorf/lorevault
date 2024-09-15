@@ -9,6 +9,11 @@ repository="https://github.com/JanNeuendorf/lorevault"
 readme = "README.md"
 categories = ["command-line-utilities"]
 
+exclude = [
+    "justfile",
+    "testing",
+]
+
 [dependencies]
 anyhow = "1.0.81"
 auth-git2 = "0.5.4"
