@@ -5,6 +5,9 @@ edition = "2021"
 authors = ["Jan Neuendorf"]
 description = "A simple program to create a directory from a recipe."
 license="MIT"
+repository="https://github.com/JanNeuendorf/lorevault"
+readme = "README.md"
+categories = ["command-line-utilities"]
 
 [dependencies]
 anyhow = "1.0.81"
@@ -27,8 +30,6 @@ ssh2 = "0.9.4"
 tempfile = "3.10.1"
 termion = "3.0.0"
 toml = "0.8.12"
-tracing = {version="0.1.40",optional=true}
-tracing-subscriber ={version= "0.3.18",optional=true}
 
 [profile.release]
 opt-level = 3
