@@ -263,6 +263,8 @@ pub struct File {
     pub sources: Vec<FileSource>,
     #[serde(rename = "edit", default)]
     pub edits: Vec<FileEdit>,
+    #[serde(rename = "decrypt", default)]
+    pub decrypt: DecryptionMethod,
 }
 
 impl File {
@@ -358,6 +360,7 @@ impl Inclusion {
                 hash: original_file.hash,
                 sources: original_file.sources,
                 edits: include_edits(&original_file.edits, &self.tags.clone().unwrap_or(vec![])),
+                decrypt: DecryptionMethod::None,
             })
         }
         for d in &config.directories {
