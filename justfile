@@ -17,7 +17,7 @@ clean: test_clean
 
 test: fmt
     cargo test
-    just example_test bigtest1 bigtest2 bigtest3 failure_tests edits_test show_test clean_command_test default_tags_test
+    just example_test bigtest1 bigtest2 bigtest3 failure_tests edits_test show_test clean_command_test default_tags_test decryption_test
 
 build: test 
     cargo build --release
@@ -223,6 +223,15 @@ make_test_repo:
     {{test_prefix}} sync testing/default_tags.toml tmpfolder -Y -t '!mydefault'
     just count_folder tmpfolder 1    
 
+@decryption_test: test_clean
+    {{test_prefix}} sync testing/decryption.toml tmpfolder -Y
+    just count_folder tmpfolder 1
+    diff tmpfolder/undecrypted.txt testing/testsecret.age
+    just error_contains "{{test_prefix}} sync testing/decryption.toml tmpfolder -Y -t decrypt" "age-keys"
+    {{test_prefix}} sync testing/decryption.toml tmpfolder -Y -t decrypt -i testing/testkey.txt
+    just count_folder tmpfolder 2
+    just output_contains "cat tmpfolder/decrypted.txt" "Peter Parker"
+    just output_contains "cat tmpfolder/decrypted.txt" "(I knew it!)"
 
 
 # Check if a folder contains the expected number of items.

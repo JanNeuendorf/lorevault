@@ -10,7 +10,9 @@ pub fn decrypt_agev1(
         _ => return Err(format_err!("The data was not encrypted for a recipient")),
     };
     let mut decrypted = vec![];
-    let mut reader = decryptor.decrypt(ids_to_try.iter().map(|k| k as &dyn age::Identity))?;
+    let mut reader = decryptor
+        .decrypt(ids_to_try.iter().map(|k| k as &dyn age::Identity))
+        .context("No matching age-keys found")?;
     reader.read_to_end(&mut decrypted)?;
 
     Ok(decrypted)

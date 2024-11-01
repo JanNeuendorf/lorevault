@@ -1,0 +1,16 @@
+
+[[file]]
+path="undecrypted.txt"
+sources=["{{SELF_ROOT}}/testsecret.age"]
+
+[[file]]
+path="decrypted.txt"
+sources=["{{SELF_ROOT}}/testsecret.age"]
+tags=["decrypt"]
+decrypt="agev1"
+
+[[file.edit]]
+type="insert"
+content="(I knew it!)"
+position="end"
+
