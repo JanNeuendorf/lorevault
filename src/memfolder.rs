@@ -1,5 +1,3 @@
-use age::Identity;
-
 use crate::*;
 pub struct MemFolder(pub HashMap<PathBuf, Vec<u8>>);
 
