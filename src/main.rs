@@ -34,12 +34,15 @@ use termion::terminal_size;
 //------------------------------------------------------------
 mod cli;
 mod config;
+mod decrypt;
 mod directories;
 mod edits;
 mod memfolder;
 mod sources;
 mod variables;
-use {cli::*, config::*, directories::*, edits::*, memfolder::*, sources::*, variables::*};
+use {
+    cli::*, config::*, decrypt::*, directories::*, edits::*, memfolder::*, sources::*, variables::*,
+};
 
 //------------------------------------------------------------
 //constants
