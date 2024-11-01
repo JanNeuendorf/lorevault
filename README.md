@@ -267,7 +267,28 @@ the contents of `new/filename.txt` will match the state of `data/file.txt` at th
 If it is referred to with a path, it is the current version in the directory.
 
 ## Automatic File Decryption
-We might want to include files with secret contents in our directory. One way to do that is to use lorevault to fetch the encrypted files and then decrypt them with a script. Lorevault has build-in support for [age](https://github.com/FiloSottile/age) as a tool and format for file-encryption. 
+We might want to include files with secret contents in our directory. One way to do that is to use lorevault to fetch the encrypted files and then decrypt them with a script. For convenience, lorevault has build-in support for [age](https://github.com/FiloSottile/age) (a tool and format for file-encryption).
+**The Rust-implementation of age used here is not yet stable and in general this should not be used in situations where there is the possibility of an advanced attack.**
+
+Here is an example of how to include an encrypted file: 
+```toml 
+[[file]]
+path="decrypted.txt"
+sources=["/path/to/encrypted.age"]
+hash = "741C077E70E4869ADBC29CCC34B7935B58DDAC16A4B8007AC127181E2148F468"
+decrypt="agev1"
+```
+The hash always refers to the encrypted file not the decrypted one. This means that the file will always be regenerated. 
+
+
+In order for this to work, we need to provide the path to a private key. 
+
+```sh
+lorevault sync config.toml targetdir -i /path/to/key
+```
+We can provide multiple key-files (containing multiple keys) and all keys will be tried on all encrypted files. 
+Currently this only supports the original key format of [age](https://github.com/FiloSottile/age) (no ssh-keys). 
+
 
 ## Partially Managing a Directory
 Sometimes we do not want to control the entire directory. A good example might be managing **dotfiles** in `~/.config`. 
