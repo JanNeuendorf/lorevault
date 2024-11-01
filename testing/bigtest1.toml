@@ -4,7 +4,7 @@ var.favorite_black_cat="Freddy"
 
 [[directory]]
 path="program_src"
-sources=["https://invalid.com#{{rust_git_commit}}:src","{{rust_git_repo}}#{{rust_git_commit}}:src"]
+sources=["https://invalid.domaindoesnotexist#{{rust_git_commit}}:src","{{rust_git_repo}}#{{rust_git_commit}}:src"]
 
 [[directory]]
 path="/"
