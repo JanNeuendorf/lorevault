@@ -65,6 +65,7 @@ impl Directory {
                 hash: None,
                 sources: vec![source.get_single_file_source(&subpath)?],
                 edits: vec![],
+                decrypt: DecryptionMethod::None,
             })
         }
         if files.len() == 0 {

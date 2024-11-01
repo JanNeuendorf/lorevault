@@ -179,6 +179,7 @@ impl VariableCompletion for File {
             hash: self.hash.clone(),
             sources: self.sources.set_single_variable(key, value)?,
             edits: self.edits.set_single_variable(key, value)?,
+            decrypt: self.decrypt,
         })
     }
 }

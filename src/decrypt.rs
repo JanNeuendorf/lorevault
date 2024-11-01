@@ -30,6 +30,14 @@ pub fn load_agev1keys(paths: &Vec<PathBuf>) -> Result<Vec<age::x25519::Identity>
     Ok(ids)
 }
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Default, PartialEq, Eq)]
+pub enum DecryptionMethod {
+    #[default]
+    None,
+    #[serde(rename = "agev1")]
+    AgeV1,
+}
+
 #[cfg(test)]
 mod test {
     use std::str::FromStr;
