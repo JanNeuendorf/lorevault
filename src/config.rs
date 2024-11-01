@@ -308,7 +308,23 @@ impl File {
         let data = fetch_first_valid(&self.sources, &self.hash)?;
         let decrypted = match self.decrypt {
             DecryptionMethod::None => data,
-            DecryptionMethod::AgeV1 => decrypt_agev1(&data, ids)?,
+            DecryptionMethod::AgeV1 => {
+                let spinner = ProgressBar::new_spinner();
+                spinner.set_style(
+                    ProgressStyle::default_spinner()
+                        .template("{spinner:.green}{spinner:.green} {msg}")
+                        .context("Failed because progress bar")?,
+                );
+                spinner.set_message(format!("Decrypting: {}", self.get_path().to_string_lossy()));
+                spinner.enable_steady_tick(Duration::from_millis(50));
+
+                let d = decrypt_agev1(&data, ids)?;
+                spinner.finish_with_message(format!(
+                    "Decrypted: {}",
+                    self.get_path().to_string_lossy()
+                ));
+                d
+            }
         };
 
         self.from_reference_unchecked(&decrypted, tags)
