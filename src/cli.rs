@@ -37,6 +37,13 @@ pub enum Commands {
             help = "Overwrite target directory without confirmation"
         )]
         no_confirm: bool,
+        #[arg(
+            short,
+            long,
+            use_value_delimiter(true),
+            long_help = "List of age (v1) key-files that might be used for decryption."
+        )]
+        identity_files: Vec<PathBuf>,
     },
     #[command(about = "Remove files controlled by corresponding sync operation")]
     Clean {

@@ -1,3 +1,5 @@
+use age::Identity;
+
 use crate::*;
 pub struct MemFolder(pub HashMap<PathBuf, Vec<u8>>);
 
@@ -10,6 +12,7 @@ impl MemFolder {
         conf: &Config,
         tags: &Vec<String>,
         reference: &PathBuf,
+        ids: &Vec<age::x25519::Identity>,
     ) -> Result<Self> {
         let mut memfolder = MemFolder::empty();
         for item in &conf.get_active(tags)? {
@@ -30,12 +33,12 @@ impl MemFolder {
                 } else {
                     memfolder
                         .0
-                        .insert(item.get_path().clone(), item.build(tags)?);
+                        .insert(item.get_path().clone(), item.build(tags, ids)?);
                 }
             } else {
                 memfolder
                     .0
-                    .insert(item.get_path().clone(), item.build(tags)?);
+                    .insert(item.get_path().clone(), item.build(tags, ids)?);
             }
         }
 

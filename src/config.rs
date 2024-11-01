@@ -304,9 +304,14 @@ impl File {
             return Ok(strdata.into_bytes());
         }
     }
-    pub fn build(&self, tags: &Vec<String>) -> Result<Vec<u8>> {
+    pub fn build(&self, tags: &Vec<String>, ids: &Vec<age::x25519::Identity>) -> Result<Vec<u8>> {
         let data = fetch_first_valid(&self.sources, &self.hash)?;
-        self.from_reference_unchecked(&data, tags)
+        let decrypted = match self.decrypt {
+            DecryptionMethod::None => data,
+            DecryptionMethod::AgeV1 => decrypt_agev1(&data, ids)?,
+        };
+
+        self.from_reference_unchecked(&decrypted, tags)
     }
 }
 
