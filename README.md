@@ -266,6 +266,9 @@ If the config file is referred to as `repo#commit:config.toml` (from the CLI or 
 the contents of `new/filename.txt` will match the state of `data/file.txt` at the time of that commit. 
 If it is referred to with a path, it is the current version in the directory.
 
+## Automatic File Decryption
+We might want to include files with secret contents in our directory. One way to do that is to use lorevault to fetch the encrypted files and then decrypt them with a script. Lorevault has build-in support for [age](https://github.com/FiloSottile/age) as a tool and format for file-encryption. 
+
 ## Partially Managing a Directory
 Sometimes we do not want to control the entire directory. A good example might be managing **dotfiles** in `~/.config`. 
 Resetting the entire directory is probably not what we want. Maybe the configuration files for some programs are managed in some other way. 
