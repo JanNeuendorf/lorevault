@@ -68,7 +68,15 @@ fn main() {
             tags,
             no_confirm,
             skip_first_level,
-        } => sync_folder(output, file, tags, *no_confirm, *skip_first_level),
+            identity_files,
+        } => sync_folder(
+            output,
+            file,
+            tags,
+            *no_confirm,
+            *skip_first_level,
+            identity_files,
+        ),
         Commands::Clean {
             output,
             file,
@@ -107,7 +115,9 @@ fn sync_folder(
     tags: &Vec<String>,
     no_confirm: bool,
     skip_fist: bool,
+    identity_files: &Vec<PathBuf>,
 ) -> Result<()> {
+    let ids = load_agev1keys(identity_files)?;
     if let (Ok(c_output), Ok(cwd)) = (output.canonicalize(), std::env::current_dir()) {
         if c_output == cwd && !skip_fist {
             return Err(format_err!(
@@ -118,7 +128,7 @@ fn sync_folder(
 
     let conf = Config::from_general_path(config_path, true, None)?;
 
-    let memfolder = MemFolder::load_first_valid_with_ref(&conf, tags, &output)?;
+    let memfolder = MemFolder::load_first_valid_with_ref(&conf, tags, &output, &ids)?;
     if !skip_fist {
         if !no_confirm && output.exists() && !get_confirmation(output, memfolder.0.keys().count()) {
             return Err(format_err!("Folder overwrite not confirmed."));
@@ -143,7 +153,7 @@ fn sync_dotconf(config_path: &str, tags: &Vec<String>, no_confirm: bool) -> Resu
         ));
     }
     let dotconf = config_dir().context("Could not detect config directory")?;
-    sync_folder(&dotconf, config_path, tags, no_confirm, true)
+    sync_folder(&dotconf, config_path, tags, no_confirm, true, &vec![])
 }
 
 fn show(source: &String, output: &Option<PathBuf>) -> Result<()> {
