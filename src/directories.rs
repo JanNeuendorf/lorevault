@@ -11,6 +11,7 @@ pub struct Directory {
     sources: Vec<DirSource>,
     #[serde(default)]
     ignore_hidden: bool,
+    hash: Option<Vec<String>>,
 }
 
 impl Directory {
@@ -55,15 +56,43 @@ impl Directory {
                 ));
             }
         }
+        if let Some(hashlist) = &self.hash {
+            let path_hash = hashlist.get(0).context("Incomplete directory hash")?;
+            let computed_hash = &path_list_hash(&list)?;
+            if computed_hash != path_hash {
+                return Err(format_err!(
+                    "The hash of the paths does not match for {} expected:{} got:{}",
+                    self.path.to_string_lossy(),
+                    path_hash,
+                    computed_hash
+                ));
+            }
+            if hashlist.len() != list.len() + 1 {
+                return Err(format_err!(
+                    "The list of hashes has the wrong length {}",
+                    self.path.to_string_lossy()
+                ));
+            }
+        }
+
         let mut files: Vec<File> = vec![];
-        for subpath in list {
+        for (hash_index, subpath) in sorted_path_list(&list).iter().enumerate() {
             if self.ignore_hidden && subpath.display().to_string().starts_with(".") {
                 continue;
             }
+
+            let hash = match &self.hash {
+                Some(hl) => Some(
+                    hl.get(hash_index + 1)
+                        .context("hash list too short")?
+                        .clone(),
+                ),
+                _ => None,
+            };
             files.push(File {
                 path: self.path.clone().join(&subpath),
                 tags: self.tags.clone(),
-                hash: None,
+                hash: hash,
                 sources: vec![source.get_single_file_source(&subpath)?],
                 edits: vec![],
                 decrypt: DecryptionMethod::None,
@@ -316,17 +345,20 @@ impl VariableCompletion for DirSource {
     }
 }
 
-pub fn path_list_hash<T: AsRef<Path>>(list: &Vec<T>) -> Result<String> {
-    let l = list.iter().map(|i| i.as_ref()).collect::<Vec<_>>();
-    if l.is_empty() {
+pub fn path_list_hash<T: AsRef<Path> + Clone>(list: &Vec<T>) -> Result<String> {
+    let sorted = sorted_path_list(list);
+    if sorted.is_empty() {
         return Err(format_err!("Can not hash empty directories"));
     }
-    if l.iter().collect::<std::collections::HashSet<_>>().len() != l.len() {
+    if sorted
+        .iter()
+        .collect::<std::collections::HashSet<_>>()
+        .len()
+        != sorted.len()
+    {
         return Err(format_err!("Can not hash a file list with duplicate paths"));
     }
 
-    let mut sorted = l.clone();
-    sorted.sort();
     let mut all_paths = vec![];
     for s in sorted {
         let mut bytes = s
@@ -337,6 +369,14 @@ pub fn path_list_hash<T: AsRef<Path>>(list: &Vec<T>) -> Result<String> {
         all_paths.append(&mut bytes);
     }
     return Ok(compute_hash(&all_paths));
+}
+fn sorted_path_list<T: AsRef<Path> + Clone>(unsorted: &Vec<T>) -> Vec<PathBuf> {
+    let mut sorted = unsorted
+        .iter()
+        .map(|a| a.as_ref().to_owned())
+        .collect::<Vec<_>>();
+    sorted.sort();
+    sorted
 }
 
 #[cfg(test)]
