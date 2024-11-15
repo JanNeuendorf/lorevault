@@ -4,13 +4,13 @@ use std::path::Path;
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct Directory {
-    count: Option<usize>,
-    path: PathBuf,
-    tags: Option<Vec<String>>,
+    pub count: Option<usize>,
+    pub path: PathBuf,
+    pub tags: Option<Vec<String>>,
     #[serde(rename = "sources", alias = "source")]
-    sources: Vec<DirSource>,
+    pub sources: Vec<DirSource>,
     #[serde(default)]
-    ignore_hidden: bool,
+    pub ignore_hidden: bool,
     pub hash: Option<Vec<String>>,
 }
 
@@ -108,7 +108,7 @@ impl Directory {
     }
 }
 
-fn list_first_valid(ds: &Vec<DirSource>) -> Result<(&DirSource, Vec<PathBuf>)> {
+pub fn list_first_valid(ds: &Vec<DirSource>) -> Result<(&DirSource, Vec<PathBuf>)> {
     for s in ds {
         if let anyhow::Result::Ok(l) = s.list() {
             return Ok((s, l));
@@ -173,7 +173,7 @@ impl DirSource {
         };
         Ok(list.iter().map(|p| format_subpath(p)).collect())
     }
-    fn get_single_file_source(&self, subpath: &PathBuf) -> Result<FileSource> {
+    pub fn get_single_file_source(&self, subpath: &PathBuf) -> Result<FileSource> {
         let subpath = format_subpath(subpath);
         match self {
             DirSource::Git { repo, id, path } => Ok(FileSource::Git {
@@ -370,7 +370,7 @@ pub fn path_list_hash<T: AsRef<Path> + Clone>(list: &Vec<T>) -> Result<String> {
     }
     return Ok(compute_hash(&all_paths));
 }
-fn sorted_path_list<T: AsRef<Path> + Clone>(unsorted: &Vec<T>) -> Vec<PathBuf> {
+pub fn sorted_path_list<T: AsRef<Path> + Clone>(unsorted: &Vec<T>) -> Vec<PathBuf> {
     let mut sorted = unsorted
         .iter()
         .map(|a| a.as_ref().to_owned())

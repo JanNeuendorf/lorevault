@@ -37,11 +37,13 @@ mod config;
 mod decrypt;
 mod directories;
 mod edits;
+mod locking;
 mod memfolder;
 mod sources;
 mod variables;
 use {
-    cli::*, config::*, decrypt::*, directories::*, edits::*, memfolder::*, sources::*, variables::*,
+    cli::*, config::*, decrypt::*, directories::*, edits::*, locking::*, memfolder::*, sources::*,
+    variables::*,
 };
 
 //------------------------------------------------------------

@@ -36,6 +36,7 @@ ssh2 = "0.9.4"
 tempfile = "3.10.1"
 termion = "3.0.0"
 toml = "0.8.12"
+toml_edit = "0.22.22"
 
 [profile.release]
 opt-level = 3

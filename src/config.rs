@@ -10,13 +10,13 @@ pub struct Config {
     #[serde(default, alias = "var")] // The alias lets us write var.key=value in the toml file.
     variables: HashMap<String, String>,
     #[serde(rename = "file", default)]
-    content: Vec<File>,
+    pub content: Vec<File>,
     #[serde(default)]
     #[serde(rename = "include")]
-    inclusions: Vec<Inclusion>,
+    pub inclusions: Vec<Inclusion>,
     #[serde(default)]
     #[serde(rename = "directory")]
-    directories: Vec<Directory>,
+    pub directories: Vec<Directory>,
     #[serde(rename = "default", default)]
     pub default_tags: Vec<String>,
 }
@@ -99,7 +99,11 @@ impl Config {
         Ok(new_content)
     }
 
-    fn from_filesource(source: &FileSource, allow_local: bool, hash: Option<&str>) -> Result<Self> {
+    pub fn from_filesource(
+        source: &FileSource,
+        allow_local: bool,
+        hash: Option<&str>,
+    ) -> Result<Self> {
         let data = match source {
             FileSource::Local { path } => {
                 if path.is_relative() && !allow_local {
@@ -340,7 +344,7 @@ impl File {
     }
 }
 
-fn fetch_first_valid(sources: &Vec<FileSource>, hash: &Option<String>) -> Result<Vec<u8>> {
+pub fn fetch_first_valid(sources: &Vec<FileSource>, hash: &Option<String>) -> Result<Vec<u8>> {
     for s in sources {
         let result = s.fetch();
 
