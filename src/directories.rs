@@ -1,4 +1,5 @@
 use crate::*;
+use std::path::Path;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
@@ -315,8 +316,33 @@ impl VariableCompletion for DirSource {
     }
 }
 
+pub fn path_list_hash<T: AsRef<Path>>(list: &Vec<T>) -> Result<String> {
+    let l = list.iter().map(|i| i.as_ref()).collect::<Vec<_>>();
+    if l.is_empty() {
+        return Err(format_err!("Can not hash empty directories"));
+    }
+    if l.iter().collect::<std::collections::HashSet<_>>().len() != l.len() {
+        return Err(format_err!("Can not hash a file list with duplicate paths"));
+    }
+
+    let mut sorted = l.clone();
+    sorted.sort();
+    let mut all_paths = vec![];
+    for s in sorted {
+        let mut bytes = s
+            .to_str()
+            .context("Can only hash paths that are string-representable")?
+            .as_bytes()
+            .to_vec();
+        all_paths.append(&mut bytes);
+    }
+    return Ok(compute_hash(&all_paths));
+}
+
 #[cfg(test)]
 mod test {
+    use std::str::FromStr;
+
     use super::*;
 
     #[test]
@@ -325,5 +351,25 @@ mod test {
         assert_eq!(list.len(), 2);
         assert!(list.contains(&PathBuf::from("file1.txt")));
         assert!(list.contains(&PathBuf::from("subfolder/file2.txt")));
+    }
+    #[test]
+    fn test_path_list_hash() {
+        let a = &PathBuf::from_str("/home/me/path.file").unwrap();
+        let b = &PathBuf::from_str("other.file").unwrap();
+        let c = &PathBuf::from_str("even_other.file").unwrap();
+        assert_eq!(
+            path_list_hash(&vec!(a, b, c)).unwrap(),
+            path_list_hash(&vec!(a, c, b)).unwrap()
+        );
+        assert!(path_list_hash(&vec!() as &Vec<PathBuf>).is_err());
+        assert!(path_list_hash(&vec!(a, a)).is_err());
+        assert_ne!(
+            path_list_hash(&vec!(a, c)).unwrap(),
+            path_list_hash(&vec!(a, b)).unwrap()
+        );
+        // assert_eq!(
+        //     file_list_hash(&vec!(a, b, c)).unwrap(),
+        //     file_list_hash(&vec!(a, b, c, d)).unwrap()
+        // );
     }
 }
