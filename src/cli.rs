@@ -126,6 +126,12 @@ pub enum Commands {
         )]
         output: Option<PathBuf>,
     },
+    #[command(about = "Adds missing hashes to an existing file")]
+    Lock {
+        file: PathBuf,
+        #[arg(short, help = "Creates a new file instead of overwriting the old one")]
+        output: Option<PathBuf>,
+    },
 }
 
 // A "general_path" is a string that might be a path or repo#id:subpath

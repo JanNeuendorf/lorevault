@@ -1,5 +1,5 @@
 use crate::*;
-use toml_edit::{array, value, DocumentMut, Table};
+use toml_edit::{value, DocumentMut, Table};
 
 fn get_valid_file_hash(f: &File) -> Result<String> {
     if f.hash.is_some() {
@@ -31,7 +31,7 @@ fn get_valid_dir_hash(dir: &Directory) -> Result<Vec<String>> {
     Ok(hashes)
 }
 
-fn get_fully_hashed_config(conf: &Config, source: &FileSource) -> Result<Config> {
+fn get_fully_hashed_config(conf: &Config) -> Result<Config> {
     let mut new_config = conf.clone();
     for f in &mut new_config.content {
         if f.hash.is_some() {
@@ -60,8 +60,7 @@ fn get_fully_hashed_config(conf: &Config, source: &FileSource) -> Result<Config>
 
 pub fn build_locked_toml(source: &FileSource) -> Result<String> {
     let original_string = String::from_utf8(source.fetch()?)?;
-    let hashed_config =
-        get_fully_hashed_config(&Config::from_filesource(source, true, None)?, &source)?;
+    let hashed_config = get_fully_hashed_config(&Config::from_filesource(source, true, None)?)?;
 
     let mut doc: DocumentMut = original_string.parse::<DocumentMut>()?;
     for (file_index, hashed_file) in hashed_config.content.iter().enumerate() {

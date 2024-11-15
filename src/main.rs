@@ -98,6 +98,7 @@ fn main() {
         Commands::Hash { file } => print_hash(file),
         Commands::Tags { file } => print_tags(file),
         Commands::List { file, tags } => print_list(file, tags),
+        Commands::Lock { file, output } => run_lock_command(file, output),
     };
     if let Err(_) = clean_cache_dir() {
         yellow("Cache directory could not be cleaned up");
@@ -311,6 +312,19 @@ fn clean_command(
         }
         Ok(())
     }
+}
+
+fn run_lock_command(file: &PathBuf, output: &Option<PathBuf>) -> Result<()> {
+    let outfile = match output {
+        Some(o) => o,
+        _ => file,
+    };
+    let source = FileSource::Local {
+        path: file.canonicalize()?,
+    };
+    let new_contents = build_locked_toml(&source)?;
+    fs::write(outfile, new_contents)?;
+    Ok(())
 }
 
 fn clean_cache_dir() -> Result<()> {
