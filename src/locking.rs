@@ -123,7 +123,6 @@ pub fn build_locked_toml(source: &FileSource) -> Result<String> {
 mod test {
 
     use super::*;
-    use toml_edit::{value, DocumentMut};
 
     #[test]
     fn toml_edit_test() {

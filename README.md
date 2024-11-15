@@ -176,6 +176,9 @@ We have the option to specify the expected number of files as a check. The possi
 The first working source is used for listing the directory and fetching the files. 
 In practice, the directory is expanded and the files are added to the list of files individually.
 
+(We can also specify hashes for directories. They consist of the hash of the filepaths followed by the hashes of the individual files. This should not be set manually but only with the `lock` subcommand. While identical hashes for the filepaths guarantee reproducible results, sources with identical results can give different hashes.
+)
+
 ### Variables
 To avoid repetition, variables can be set at the beginning of the file and used in the following way:
 ```toml
@@ -200,11 +203,13 @@ config="/path/to/included.toml" # Can be repo#id:path
 subdir="files/go/here" # Defaults to directory root.
 required_tags=["tag1"] # If not set, the file will not be included.
 with_tags=["tag2"] # Will be passed to the other file.
-
+# We can specify the hash of the included `.toml` file itself.
+hash = "741C077E70E4869ADBC29CCC34B7935B58DDAC16A4B8007AC127181E2148F468"
+# We can ensure that the loaded config must be locked.
+enforce_locked = true # default false
 ```
 Variables are not shared between files. Tags for included files can only be activated in the way shown above and are not influenced by the tags activated on the CLI.
 
- You can specify the hash of the included `.toml` file itself.
 
 The behavior should be the same as building the directory with the required tags first and then including it. 
 
@@ -266,7 +271,7 @@ If the config file is referred to as `repo#commit:config.toml` (from the CLI or 
 the contents of `new/filename.txt` will match the state of `data/file.txt` at the time of that commit. 
 If it is referred to with a path, it is the current version in the directory.
 
-## Automatic File Decryption
+### Automatic File Decryption
 We might want to include files with secret contents in our directory. One way to do that is to use lorevault to fetch the encrypted files and then decrypt them with a script. For convenience, lorevault has build-in support for [age](https://github.com/FiloSottile/age) (a tool and format for file-encryption).
 **The Rust-implementation of age used here is not yet stable and in general this should not be used in situations where there is the possibility of an advanced attack.**
 
@@ -288,6 +293,7 @@ lorevault sync config.toml targetdir -i /path/to/key
 ```
 We can provide multiple key-files (containing multiple keys) and all keys will be tried on all encrypted files. 
 Currently this only supports the original key format of [age](https://github.com/FiloSottile/age) (no ssh-keys). 
+
 
 
 ## Partially Managing a Directory
@@ -356,8 +362,22 @@ There is one **potential risk** when using this command: the list of paths contr
 
 Issues can be avoided by not referring to local files or directories and by not using git-IDs like `branch-name` or `HEAD`, which can change. 
 
+## Making it Reproducible
 
+A config file is called *locked* when all of the following requirements are true:
+- All files have a hash
+- All directories have a hash 
+- All included configs have a hash 
+- All included configs have `enforce_locked` set to true
 
+This does not mean that the file actually works, but it guarantees that if it works, it always produces the same output.
+We can enforce that the file is locked by passing the `--locked` flag when syncing the directory.
+
+We can use:
+```sh
+lorevault lock configfile.toml
+```
+This will try to fill in missing hashes. 
 
 ## Fetching a single source 
 
