@@ -1,0 +1,17 @@
+default=["inc"]
+[[include]]
+path="/included/"
+with_tags=["theme"]
+tags=["inc"]
+config="{{SELF_ROOT}}/locked_example.toml"
+
+[[directory]]
+sources=["{{SELF_ROOT}}/testfolder"] # comments should stay in place
+path="dir"
+
+# preserved comment
+[[file]]
+sources=["{{SELF_ROOT}}/testfolder/file1.txt"]
+path="file.txt"
+hash = "D75ED77277F0999E2B27777EAEDADB063740863DA2BE34ADACED8468761682A7" # This file already has a hash
+

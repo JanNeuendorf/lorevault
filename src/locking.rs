@@ -78,7 +78,6 @@ pub fn build_locked_toml(source: &FileSource) -> Result<String> {
                 given_key
             ));
         }
-        dbg!(given_key);
     }
     for (file_index, hashed_file) in hashed_config.content.iter().enumerate() {
         let hash = hashed_file
@@ -92,6 +91,9 @@ pub fn build_locked_toml(source: &FileSource) -> Result<String> {
             .context("indices of files do not match")?
             .as_table_mut()
             .context("toml entry is malformed")?;
+        if table.contains_key("hash") {
+            continue;
+        }
         table.insert("hash", value(hash));
     }
     for (dir_index, hashed_dir) in hashed_config.directories.iter().enumerate() {
@@ -110,6 +112,9 @@ pub fn build_locked_toml(source: &FileSource) -> Result<String> {
             .context("indices of directories do not match")?
             .as_table_mut()
             .context("toml entry is malformed")?;
+        if table.contains_key("hash") {
+            continue;
+        }
         table.insert("hash", toml_edit::Item::Value(toml_edit::Value::Array(arr)));
     }
     for (inc_index, hashed_inc) in hashed_config.inclusions.iter().enumerate() {
@@ -128,6 +133,9 @@ pub fn build_locked_toml(source: &FileSource) -> Result<String> {
             .context("indices of includes do not match")?
             .as_table_mut()
             .context("toml entry is malformed")?;
+        if table.contains_key("hash") {
+            continue;
+        }
         table.insert("hash", value(hash));
         table.remove("enforce_locked");
         table.insert("enforce_locked", value(true));

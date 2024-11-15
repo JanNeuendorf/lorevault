@@ -1,0 +1,35 @@
+                                                                                   
+# ██╗      ██████╗ ██████╗ ███████╗██╗   ██╗ █████╗ ██╗   ██╗██╗  ████████╗
+# ██║     ██╔═══██╗██╔══██╗██╔════╝██║   ██║██╔══██╗██║   ██║██║  ╚══██╔══╝
+# ██║     ██║   ██║██████╔╝█████╗  ██║   ██║███████║██║   ██║██║     ██║   
+# ██║     ██║   ██║██╔══██╗██╔══╝  ╚██╗ ██╔╝██╔══██║██║   ██║██║     ██║   
+# ███████╗╚██████╔╝██║  ██║███████╗ ╚████╔╝ ██║  ██║╚██████╔╝███████╗██║   
+# ╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝  ╚═══╝  ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝   
+
+
+var.best_black_cat="Freddy"
+
+var.source_of_dracula="https://www.gutenberg.org/cache/epub/345/pg345.txt"
+
+[[file]]
+path="Count_{{best_black_cat}}.txt"
+sources=["{{source_of_dracula}}"]
+hash = "D26E093331D79C652121376DA987D9287EE932086EF505AFDA252709942F6A9F"
+
+[[file.edit]]
+type="replace"
+from="Dracula"
+to="{{best_black_cat}}"
+ignore_case=true
+
+[[file.edit]]
+type="insert"
+position="prepend"
+content="This version of Dracula is dedicated to {{best_black_cat}}.\n\n"
+
+[[directory]]
+tags=["theme"]
+path="theme_directory/"
+sources=["https://github.com/dracula/alacritty#master:/"]
+ignore_hidden=true 
+hash = ["11EA890BBCED614B599822721B8F5AA678A2EA194B4C833143334230328F2EFF", "52B958A687AA450466469E018E23C982390F4C5A6127E5F744DB31B56A08039E", "3B7671ED64323A80DCB7C18BB1A1A6EF959D2001176D49C79AE713042D0573E7", "EE169A626ABB97F99573C3DE92520F0E79F3F99DA66EF2E4E025FDAA72B10AC7", "899314C32C1EB4733152C306A6CAB0721FC94B9C43F53C5C54E79726B2B32DC8", "1127E8F90CE597E5E5F9F22FC520CC1F6203913BE4E77CF5A3795EBAE00B63E4", "568D8A14833E1757D38403441375D3BA7DCD67886E61413FB6264763B350D946", "63AD62990580349F1C703EA2C75AB62D590981E0264765016A06DD597A196382", "40CFAF40FE098B91C701FDC700B72F05527EA41172A549A7DD80734FCB24E794"]

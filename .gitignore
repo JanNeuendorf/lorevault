@@ -6,4 +6,5 @@ test.toml
 local_testing
 .vscode
 testing/testrepo
+testing/locked.toml
 releases
