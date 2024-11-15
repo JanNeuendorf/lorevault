@@ -63,6 +63,23 @@ pub fn build_locked_toml(source: &FileSource) -> Result<String> {
     let hashed_config = get_fully_hashed_config(&Config::from_filesource(source, true, None)?)?;
 
     let mut doc: DocumentMut = original_string.parse::<DocumentMut>()?;
+    let compatible_keys = vec![
+        "file",
+        "directory",
+        "include",
+        "var",
+        "variables",
+        "default",
+    ];
+    for given_key in doc.iter().map(|(k, _)| k) {
+        if !compatible_keys.contains(&given_key) {
+            return Err(format_err!(
+                "The key (or alias) {} is not compatible with the lock command.",
+                given_key
+            ));
+        }
+        dbg!(given_key);
+    }
     for (file_index, hashed_file) in hashed_config.content.iter().enumerate() {
         let hash = hashed_file
             .hash
