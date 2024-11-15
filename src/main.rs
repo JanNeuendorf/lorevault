@@ -69,6 +69,7 @@ fn main() {
             no_confirm,
             skip_first_level,
             identity_files,
+            locked,
         } => sync_folder(
             output,
             file,
@@ -76,6 +77,7 @@ fn main() {
             *no_confirm,
             *skip_first_level,
             identity_files,
+            *locked,
         ),
         Commands::Clean {
             output,
@@ -116,6 +118,7 @@ fn sync_folder(
     no_confirm: bool,
     skip_fist: bool,
     identity_files: &Vec<PathBuf>,
+    locked: bool,
 ) -> Result<()> {
     let ids = load_agev1keys(identity_files)?;
     if let (Ok(c_output), Ok(cwd)) = (output.canonicalize(), std::env::current_dir()) {
@@ -127,6 +130,9 @@ fn sync_folder(
     }
 
     let conf = Config::from_general_path(config_path, true, None)?;
+    if locked && !conf.is_locked() {
+        return Err(format_err!("The config file is not locked!"));
+    }
 
     let memfolder = MemFolder::load_first_valid_with_ref(&conf, tags, &output, &ids)?;
     if !skip_fist {
@@ -153,7 +159,15 @@ fn sync_dotconf(config_path: &str, tags: &Vec<String>, no_confirm: bool) -> Resu
         ));
     }
     let dotconf = config_dir().context("Could not detect config directory")?;
-    sync_folder(&dotconf, config_path, tags, no_confirm, true, &vec![])
+    sync_folder(
+        &dotconf,
+        config_path,
+        tags,
+        no_confirm,
+        true,
+        &vec![],
+        false,
+    )
 }
 
 fn show(source: &String, output: &Option<PathBuf>) -> Result<()> {

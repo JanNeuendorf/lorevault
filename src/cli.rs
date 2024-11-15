@@ -44,6 +44,13 @@ pub enum Commands {
             long_help = "List of age (v1) key-files that might be used for decryption."
         )]
         identity_files: Vec<PathBuf>,
+        #[arg(
+            long,
+            short,
+            default_value = "false",
+            help = "Enforce the config file to be locked (reproducible)"
+        )]
+        locked: bool,
     },
     #[command(about = "Remove files controlled by corresponding sync operation")]
     Clean {
