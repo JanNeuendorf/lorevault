@@ -251,6 +251,15 @@ impl Config {
 
         vecset(taglists)
     }
+    pub fn is_locked(&self) -> bool {
+        let all_inc_hashed_and_locked = self
+            .inclusions
+            .iter()
+            .all(|i| i.hash.is_some() && i.enforce_locked);
+        let all_files_hashed = self.content.iter().all(|f| f.hash.is_some());
+        let all_directories_hashed = self.directories.iter().all(|d| d.hash.is_some());
+        return all_inc_hashed_and_locked && all_files_hashed && all_directories_hashed;
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -368,11 +377,16 @@ pub struct Inclusion {
     #[serde(default, rename = "path")]
     pub subfolder: PathBuf,
     pub hash: Option<String>,
+    #[serde(default)]
+    pub enforce_locked: bool,
 }
 impl Inclusion {
     pub fn get_files(&self) -> Result<Vec<File>> {
         let config =
             Config::from_general_path(&self.config, false, self.hash.as_ref().map(|s| s.as_str()))?;
+        if self.enforce_locked && !config.is_locked() {
+            return Err(format_err!("Config {} required to be locked", self.config));
+        }
         let mut files: Vec<File> = vec![];
         for original_file in config.get_active(&self.with_tags)? {
             files.push(File {

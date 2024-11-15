@@ -11,7 +11,7 @@ pub struct Directory {
     sources: Vec<DirSource>,
     #[serde(default)]
     ignore_hidden: bool,
-    hash: Option<Vec<String>>,
+    pub hash: Option<Vec<String>>,
 }
 
 impl Directory {

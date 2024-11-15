@@ -207,6 +207,7 @@ impl VariableCompletion for Inclusion {
             tags: self.tags.clone(),
             with_tags: self.with_tags.clone(),
             hash: self.hash.clone(),
+            enforce_locked: self.enforce_locked,
         })
     }
 }
