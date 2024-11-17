@@ -25,7 +25,11 @@ While you can be pedantic, you do not have to be, so you can use this for simple
 **This can also be used to manage your dotfiles.** (skip [here](#partially-managing-a-directory))
 
 ## Getting Started
-You can install the latest version using Cargo.
+You can install the latest release
+```bash
+cargo install --git https://github.com/JanNeuendorf/lorevault
+```
+or the latest version from this repository
 ```bash
 cargo install --git https://github.com/JanNeuendorf/lorevault
 ```
