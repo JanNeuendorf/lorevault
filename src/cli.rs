@@ -44,6 +44,13 @@ pub enum Commands {
             long_help = "List of age (v1) key-files that might be used for decryption."
         )]
         identity_files: Vec<PathBuf>,
+        #[arg(
+            long,
+            short,
+            default_value = "false",
+            help = "Enforce the config file to be locked (reproducible)"
+        )]
+        locked: bool,
     },
     #[command(about = "Remove files controlled by corresponding sync operation")]
     Clean {
@@ -117,6 +124,12 @@ pub enum Commands {
             help = "Writes the contents to a file instead of printing them",
             long_help = "Writes the contents to a file instead of printing them. This should be used for non-utf8 files instead of a pipe"
         )]
+        output: Option<PathBuf>,
+    },
+    #[command(about = "Adds missing hashes to an existing file")]
+    Lock {
+        file: PathBuf,
+        #[arg(short, help = "Creates a new file instead of overwriting the old one")]
         output: Option<PathBuf>,
     },
 }

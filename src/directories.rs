@@ -1,15 +1,17 @@
 use crate::*;
+use std::path::Path;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct Directory {
-    count: Option<usize>,
-    path: PathBuf,
-    tags: Option<Vec<String>>,
+    pub count: Option<usize>,
+    pub path: PathBuf,
+    pub tags: Option<Vec<String>>,
     #[serde(rename = "sources", alias = "source")]
-    sources: Vec<DirSource>,
+    pub sources: Vec<DirSource>,
     #[serde(default)]
-    ignore_hidden: bool,
+    pub ignore_hidden: bool,
+    pub hash: Option<Vec<String>>,
 }
 
 impl Directory {
@@ -54,15 +56,43 @@ impl Directory {
                 ));
             }
         }
+        if let Some(hashlist) = &self.hash {
+            let path_hash = hashlist.get(0).context("Incomplete directory hash")?;
+            let computed_hash = &path_list_hash(&list)?;
+            if computed_hash != path_hash {
+                return Err(format_err!(
+                    "The hash of the paths does not match for {} expected:{} got:{}",
+                    self.path.to_string_lossy(),
+                    path_hash,
+                    computed_hash
+                ));
+            }
+            if hashlist.len() != list.len() + 1 {
+                return Err(format_err!(
+                    "The list of hashes has the wrong length {}",
+                    self.path.to_string_lossy()
+                ));
+            }
+        }
+
         let mut files: Vec<File> = vec![];
-        for subpath in list {
+        for (hash_index, subpath) in sorted_path_list(&list).iter().enumerate() {
             if self.ignore_hidden && subpath.display().to_string().starts_with(".") {
                 continue;
             }
+
+            let hash = match &self.hash {
+                Some(hl) => Some(
+                    hl.get(hash_index + 1)
+                        .context("hash list too short")?
+                        .clone(),
+                ),
+                _ => None,
+            };
             files.push(File {
                 path: self.path.clone().join(&subpath),
                 tags: self.tags.clone(),
-                hash: None,
+                hash: hash,
                 sources: vec![source.get_single_file_source(&subpath)?],
                 edits: vec![],
                 decrypt: DecryptionMethod::None,
@@ -78,7 +108,7 @@ impl Directory {
     }
 }
 
-fn list_first_valid(ds: &Vec<DirSource>) -> Result<(&DirSource, Vec<PathBuf>)> {
+pub fn list_first_valid(ds: &Vec<DirSource>) -> Result<(&DirSource, Vec<PathBuf>)> {
     for s in ds {
         if let anyhow::Result::Ok(l) = s.list() {
             return Ok((s, l));
@@ -143,7 +173,7 @@ impl DirSource {
         };
         Ok(list.iter().map(|p| format_subpath(p)).collect())
     }
-    fn get_single_file_source(&self, subpath: &PathBuf) -> Result<FileSource> {
+    pub fn get_single_file_source(&self, subpath: &PathBuf) -> Result<FileSource> {
         let subpath = format_subpath(subpath);
         match self {
             DirSource::Git { repo, id, path } => Ok(FileSource::Git {
@@ -315,8 +345,44 @@ impl VariableCompletion for DirSource {
     }
 }
 
+pub fn path_list_hash<T: AsRef<Path> + Clone>(list: &Vec<T>) -> Result<String> {
+    let sorted = sorted_path_list(list);
+    if sorted.is_empty() {
+        return Err(format_err!("Can not hash empty directories"));
+    }
+    if sorted
+        .iter()
+        .collect::<std::collections::HashSet<_>>()
+        .len()
+        != sorted.len()
+    {
+        return Err(format_err!("Can not hash a file list with duplicate paths"));
+    }
+
+    let mut all_paths = vec![];
+    for s in sorted {
+        let mut bytes = s
+            .to_str()
+            .context("Can only hash paths that are string-representable")?
+            .as_bytes()
+            .to_vec();
+        all_paths.append(&mut bytes);
+    }
+    return Ok(compute_hash(&all_paths));
+}
+pub fn sorted_path_list<T: AsRef<Path> + Clone>(unsorted: &Vec<T>) -> Vec<PathBuf> {
+    let mut sorted = unsorted
+        .iter()
+        .map(|a| a.as_ref().to_owned())
+        .collect::<Vec<_>>();
+    sorted.sort();
+    sorted
+}
+
 #[cfg(test)]
 mod test {
+    use std::str::FromStr;
+
     use super::*;
 
     #[test]
@@ -325,5 +391,25 @@ mod test {
         assert_eq!(list.len(), 2);
         assert!(list.contains(&PathBuf::from("file1.txt")));
         assert!(list.contains(&PathBuf::from("subfolder/file2.txt")));
+    }
+    #[test]
+    fn test_path_list_hash() {
+        let a = &PathBuf::from_str("/home/me/path.file").unwrap();
+        let b = &PathBuf::from_str("other.file").unwrap();
+        let c = &PathBuf::from_str("even_other.file").unwrap();
+        assert_eq!(
+            path_list_hash(&vec!(a, b, c)).unwrap(),
+            path_list_hash(&vec!(a, c, b)).unwrap()
+        );
+        assert!(path_list_hash(&vec!() as &Vec<PathBuf>).is_err());
+        assert!(path_list_hash(&vec!(a, a)).is_err());
+        assert_ne!(
+            path_list_hash(&vec!(a, c)).unwrap(),
+            path_list_hash(&vec!(a, b)).unwrap()
+        );
+        // assert_eq!(
+        //     file_list_hash(&vec!(a, b, c)).unwrap(),
+        //     file_list_hash(&vec!(a, b, c, d)).unwrap()
+        // );
     }
 }

@@ -17,7 +17,7 @@ clean: test_clean
 
 test: fmt
     cargo test
-    just example_test bigtest1 bigtest2 bigtest3 failure_tests edits_test show_test clean_command_test default_tags_test decryption_test
+    just example_test bigtest1 bigtest2 bigtest3 failure_tests edits_test show_test clean_command_test default_tags_test decryption_test dirhash_test locking_test
 
 build: test 
     cargo build --release
@@ -232,6 +232,22 @@ make_test_repo:
     just count_folder tmpfolder 2
     just output_contains "cat tmpfolder/decrypted.txt" "Peter Parker"
     just output_contains "cat tmpfolder/decrypted.txt" "(I knew it!)"
+
+@dirhash_test: test_clean
+    {{test_prefix}} sync testing/dirhashes.toml tmpfolder -t nohash -Y
+    just count_folder tmpfolder 1
+    just error_contains "{{test_prefix}} sync testing/dirhashes.toml tmpfolder -t wronghash1 -Y" "hash of the paths"
+    just error_contains "{{test_prefix}} sync testing/dirhashes.toml tmpfolder -t wronghash2 -Y" "Invalid hash"
+    {{test_prefix}} sync testing/dirhashes.toml tmpfolder -t hash -Y
+    just count_folder tmpfolder 1
+
+@locking_test: test_clean
+    just error_contains "{{test_prefix}} sync testing/unlocked.toml tmpfolder --locked" "locked"
+    {{test_prefix}} sync testing/unlocked.toml tmpfolder -Y
+    {{test_prefix}} lock testing/unlocked.toml -o testing/locked.toml 
+    just output_contains "cat testing/locked.toml | grep "hash"| wc -l " 3
+    just output_contains "cat testing/locked.toml | grep "enforce_locked"| wc -l " 1
+    {{test_prefix}} sync testing/locked.toml tmpfolder --locked -Y
 
 
 # Check if a folder contains the expected number of items.

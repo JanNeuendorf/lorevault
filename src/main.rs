@@ -37,11 +37,13 @@ mod config;
 mod decrypt;
 mod directories;
 mod edits;
+mod locking;
 mod memfolder;
 mod sources;
 mod variables;
 use {
-    cli::*, config::*, decrypt::*, directories::*, edits::*, memfolder::*, sources::*, variables::*,
+    cli::*, config::*, decrypt::*, directories::*, edits::*, locking::*, memfolder::*, sources::*,
+    variables::*,
 };
 
 //------------------------------------------------------------
@@ -69,6 +71,7 @@ fn main() {
             no_confirm,
             skip_first_level,
             identity_files,
+            locked,
         } => sync_folder(
             output,
             file,
@@ -76,6 +79,7 @@ fn main() {
             *no_confirm,
             *skip_first_level,
             identity_files,
+            *locked,
         ),
         Commands::Clean {
             output,
@@ -94,6 +98,7 @@ fn main() {
         Commands::Hash { file } => print_hash(file),
         Commands::Tags { file } => print_tags(file),
         Commands::List { file, tags } => print_list(file, tags),
+        Commands::Lock { file, output } => run_lock_command(file, output),
     };
     if let Err(_) = clean_cache_dir() {
         yellow("Cache directory could not be cleaned up");
@@ -116,6 +121,7 @@ fn sync_folder(
     no_confirm: bool,
     skip_fist: bool,
     identity_files: &Vec<PathBuf>,
+    locked: bool,
 ) -> Result<()> {
     let ids = load_agev1keys(identity_files)?;
     if let (Ok(c_output), Ok(cwd)) = (output.canonicalize(), std::env::current_dir()) {
@@ -127,6 +133,9 @@ fn sync_folder(
     }
 
     let conf = Config::from_general_path(config_path, true, None)?;
+    if locked && !conf.is_locked() {
+        return Err(format_err!("The config file is not locked!"));
+    }
 
     let memfolder = MemFolder::load_first_valid_with_ref(&conf, tags, &output, &ids)?;
     if !skip_fist {
@@ -153,7 +162,15 @@ fn sync_dotconf(config_path: &str, tags: &Vec<String>, no_confirm: bool) -> Resu
         ));
     }
     let dotconf = config_dir().context("Could not detect config directory")?;
-    sync_folder(&dotconf, config_path, tags, no_confirm, true, &vec![])
+    sync_folder(
+        &dotconf,
+        config_path,
+        tags,
+        no_confirm,
+        true,
+        &vec![],
+        false,
+    )
 }
 
 fn show(source: &String, output: &Option<PathBuf>) -> Result<()> {
@@ -295,6 +312,19 @@ fn clean_command(
         }
         Ok(())
     }
+}
+
+fn run_lock_command(file: &PathBuf, output: &Option<PathBuf>) -> Result<()> {
+    let outfile = match output {
+        Some(o) => o,
+        _ => file,
+    };
+    let source = FileSource::Local {
+        path: file.canonicalize()?,
+    };
+    let new_contents = build_locked_toml(&source)?;
+    fs::write(outfile, new_contents)?;
+    Ok(())
 }
 
 fn clean_cache_dir() -> Result<()> {
